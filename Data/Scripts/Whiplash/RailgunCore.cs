@@ -10,6 +10,7 @@ using VRage.Game.Components;
 using Rexxar;
 using Rexxar.Communication;
 using Whiplash.ArmorPiercingProjectiles;
+using VRage.ModAPI;
 
 namespace Whiplash.Railgun
 {

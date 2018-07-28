@@ -49,28 +49,35 @@ namespace Whiplash.ArmorPiercingProjectiles
         bool _targetHit = false;
         int _currentTick = 0;
         const int _maxTracerFadeTicks = 120;
+        int _tracerSpawnDelayMs = 300;
         int _currentTracerFadeTicks = 0;
         List<IHitInfo> hitInfo = new List<IHitInfo>();
         long _gunEntityID;
-        Vector4 lineColor = new Color(0, 128, 255).ToVector4();
+        Vector4 _lineColor; // = new Color(0, 128, 255).ToVector4();
         MyStringId material = MyStringId.GetOrCompute("WeaponLaser");
+        MyStringId bulletMaterial = MyStringId.GetOrCompute("ProjectileTrailLine");
+        Vector3 _tracerColor;
+        float _tracerScale;
 
-        public ArmorPiercingProjectileSimulation(Vector3D origin, Vector3D direction, Vector3D shooterVelocity, float projectileSpeed, float maxTrajectory, float explosionDamage, float explosionRadius, float penetrationDamage, float penetrationRange, long gunEntityID, bool drawTracer = false, bool explode = true, bool penetrate = true)
+        public ArmorPiercingProjectileSimulation(Vector3D origin, Vector3D direction, Vector3D shooterVelocity, float projectileSpeed, float maxTrajectory, float explosionDamage, float explosionRadius, float penetrationDamage, float penetrationRange, long gunEntityID, Vector3? tracerColor = null, float tracerScale = 0, bool drawTracer = false, bool explode = true, bool penetrate = true)
         {
+            _tracerColor = tracerColor.HasValue ? tracerColor.Value : Vector3.Zero;
+            _lineColor = new Vector4(_tracerColor, 1f);
+            _tracerScale = tracerScale;
             _drawTracer = drawTracer;
             _shouldPenetrate = penetrate;
             _shouldExplode = explode;
             _penetrationDamage = penetrationDamage;
             _penetrationRange = penetrationRange;
             _gunEntityID = gunEntityID;
-            _direction = direction;
+            _direction = Vector3D.IsUnit(ref direction) ? direction : Vector3D.Normalize(direction);
             _origin = origin;
             _position = _origin;
             _explosionRadius = explosionRadius;
             _explosionDamage = explosionDamage;
             _maxTrajectory = maxTrajectory;
             _projectileSpeed = projectileSpeed;
-            _velocityCombined = shooterVelocity + (Vector3D.IsUnit(ref direction) ? direction : Vector3D.Normalize(direction)) * _projectileSpeed;
+            _velocityCombined = shooterVelocity + _direction * _projectileSpeed;
         }
 
         public void Update(bool isServer)
@@ -84,9 +91,10 @@ namespace Whiplash.ArmorPiercingProjectiles
             _position += _velocityCombined * tick;
             var _toOrigin = _position - _origin;
 
+            //draw tracer line
             if (_drawTracer && _currentTracerFadeTicks < _maxTracerFadeTicks)
             {
-                lineColor *= 0.95f;
+                _lineColor *= 0.95f;
                 _currentTracerFadeTicks++;
             }
 
@@ -95,7 +103,8 @@ namespace Whiplash.ArmorPiercingProjectiles
                 _targetHit = true;
                 _hitPosition = _position;
                 Kill();
-                CreateExplosion(_position, _direction, _explosionRadius, _explosionDamage);
+                if (_shouldExplode)
+                    CreateExplosion(_position, _direction, _explosionRadius, _explosionDamage);
                 //MyAPIGateway.Utilities.ShowNotification("Projectile killed", 2000, MyFontEnum.White);
                 return;
             }
@@ -123,7 +132,7 @@ namespace Whiplash.ArmorPiercingProjectiles
                     if (_shouldExplode && isServer)
                         CreateExplosion(_hitPosition, _direction, _explosionRadius, _explosionDamage);
 
-                    if (_shouldPenetrate && isServer)
+                    if (_shouldPenetrate /* && isServer*/) //to fight desync
                         CreatePenetrationDamage(_hitPosition, _hitPosition + _direction * _penetrationRange, _penetrationDamage);
 
                     _targetHit = true;
@@ -279,9 +288,9 @@ namespace Whiplash.ArmorPiercingProjectiles
 
         void Kill()
         {
-            if (_targetHit && _currentTracerFadeTicks < _maxTracerFadeTicks)
+            if (_drawTracer && _currentTracerFadeTicks < _maxTracerFadeTicks)
             {
-                lineColor *= 0.95f;
+                _lineColor *= 0.95f;
                 _currentTracerFadeTicks++;
                 return;
             }
@@ -291,10 +300,25 @@ namespace Whiplash.ArmorPiercingProjectiles
 
         public void DrawTracer()
         {
+            _tracerSpawnDelayMs -= 16;
+            if (_tracerSpawnDelayMs > 0)
+                return;
+
+            //draw bullet
+            float scaleFactor = MyParticlesManager.Paused ? 1f : MyUtils.GetRandomFloat(1f, 2f);
+            float lengthMultiplier = 40f * _tracerScale;
+            lengthMultiplier *= MyParticlesManager.Paused ? 0.6f : MyUtils.GetRandomFloat(0.6f, 0.8f);
+            var startPoint = _position - _direction * lengthMultiplier;
+            float thickness = (MyParticlesManager.Paused ? 0.2f : MyUtils.GetRandomFloat(0.2f, 0.3f)) * _tracerScale;
+            thickness *= MathHelper.Lerp(0.2f, 0.8f, 1f/*MySector.MainCamera.Zoom.GetZoomLevel()*/);
+
+            if (lengthMultiplier > 0f && !_targetHit)
+                MyTransparentGeometry.AddLineBillboard(bulletMaterial, new Vector4(_tracerColor * scaleFactor * 10f, 1f), startPoint, _direction, lengthMultiplier, thickness);
+
             if (_targetHit)
-                MySimpleObjectDraw.DrawLine(_origin, _hitPosition, material, ref lineColor, 1f);
+                MySimpleObjectDraw.DrawLine(_origin, _hitPosition, material, ref _lineColor, _tracerScale * 0.1f);
             else
-                MySimpleObjectDraw.DrawLine(_origin, _position, material, ref lineColor, 1f);
+                MySimpleObjectDraw.DrawLine(_origin, _position, material, ref _lineColor, _tracerScale * 0.1f);
         }
     }
 }

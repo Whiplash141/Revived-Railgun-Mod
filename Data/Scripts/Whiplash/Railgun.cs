@@ -182,8 +182,8 @@ namespace Whiplash.Railgun
         IMyFunctionalBlock block;
         IMyCubeBlock cube;
         IMyLargeTurretBase turret;
-        long _lastShootTime;
-        long _currentShootTime;
+        DateTime _lastShootTime;
+        DateTime _currentShootTime;
         //List<ArmorPiercingProjectileSimulation> liveProjectiles = new List<ArmorPiercingProjectileSimulation>();
         float _maxTrajectory;
         float _desiredSpeed;
@@ -202,9 +202,14 @@ namespace Whiplash.Railgun
         const float _reloadPowerDraw = 200f; //MW
         float _powerDrawDecrementPerTick;
         private static readonly MyDefinitionId resourceId = MyResourceDistributorComponent.ElectricityId; //new MyDefinitionId(typeof(MyObjectBuilder_GasProperties), "Electricity");
+        Vector3 _trailColor;
+        float _trailScale;
         MyResourceSinkComponent sink;
         //public bool Recharge = true;
         MyObjectBuilder_EntityBase _objectBuilder;
+
+        MySoundPair shootSound = new MySoundPair("WepShipLargeRailgunShotLZM");
+        MyEntity3DSoundEmitter soundEmitter;
 
         public bool _settingsDirty;
 
@@ -261,6 +266,10 @@ namespace Whiplash.Railgun
 
                 //get shoot time for initial check
                 _lastShootTime = GetLastShootTime();
+
+                GetTurretMaxRange();
+
+                soundEmitter = new MyEntity3DSoundEmitter((MyEntity)Entity, true);
             }
             catch (Exception e)
             {
@@ -274,7 +283,7 @@ namespace Whiplash.Railgun
             base.UpdateOnceBeforeFrame();
             try
             {
-                GetTurretMaxRange();
+                //GetTurretMaxRange();
             }
             catch (Exception e)
             {
@@ -291,51 +300,56 @@ namespace Whiplash.Railgun
                 if (cube?.CubeGrid?.Physics == null) //ignore ghost grids
                     return;
 
-                //if (MyAPIGateway.Multiplayer.IsServer)
-                //{
-                Vector3D direction;
-                Vector3D origin;
-
-                _currentShootTime = GetLastShootTime();
-
-                //fire weapon
-                if (_currentShootTime != _lastShootTime && !_firstUpdate)
+                if (MyAPIGateway.Multiplayer.IsServer)
                 {
-                    if (Entity is IMyLargeTurretBase)
+                    Vector3D direction;
+                    Vector3D origin;
+
+                    _currentShootTime = GetLastShootTime();
+
+                    //fire weapon
+                    if (_currentShootTime != _lastShootTime && !_firstUpdate)
                     {
-                        Vector3D.CreateFromAzimuthAndElevation(turret.Azimuth, turret.Elevation, out direction);
-                        direction = Vector3D.TransformNormal(direction, turret.WorldMatrix);
-                        origin = turret.WorldMatrix.Translation + turret.WorldMatrix.Up * 1.75 + direction * 0.5;
+                        if (Entity is IMyLargeTurretBase)
+                        {
+                            Vector3D.CreateFromAzimuthAndElevation(turret.Azimuth, turret.Elevation, out direction);
+                            direction = Vector3D.TransformNormal(direction, turret.WorldMatrix);
+                            origin = turret.WorldMatrix.Translation + turret.WorldMatrix.Up * 1.75 + direction * 0.5;
+                        }
+                        else
+                        {
+                            direction = block.WorldMatrix.Forward;
+                            origin = block.WorldMatrix.Translation + direction * -2.5; //for cushion
+                        }
+
+                        var velocity = block.CubeGrid.Physics.LinearVelocity;
+                        var projectile = new ArmorPiercingProjectileSimulation(origin, direction, velocity, this._desiredSpeed, this._maxTrajectory, 0f, 0f, _projectileDamage, 50f, Entity.EntityId, _trailColor, _trailScale, true, true, true);
+                        var projectileData = new RailgunFireData()
+                        {
+                            ShooterVelocity = velocity,
+                            Origin = origin,
+                            Direction = direction,
+                            ShooterID = Entity.EntityId,
+                        };
+                        RailgunMessage.SendToClients(projectileData);
+                        RailgunCore.AddProjectile(projectile);
+
+                        _isReloading = true;
+                        _currentReloadTicks = 0;
+
+                        //Apply recoil force
+                        var centerOfMass = block.CubeGrid.Physics.CenterOfMassWorld;
+                        var forceVector = -direction * _backkickForce;
+
+                        block.CubeGrid.Physics.AddForce(MyPhysicsForceType.APPLY_WORLD_IMPULSE_AND_WORLD_ANGULAR_IMPULSE, forceVector, block.GetPosition(), null);
+
+                        //MyAPIGateway.Utilities.ShowNotification("Shot", 3000);
                     }
-                    else
-                    {
-                        direction = block.WorldMatrix.Forward;
-                        origin = block.WorldMatrix.Translation + direction * -2.5; //for cushion
-                    }
 
-                    var velocity = block.CubeGrid.Physics.LinearVelocity;
-                    var projectile = new ArmorPiercingProjectileSimulation(origin, direction, velocity, this._desiredSpeed, this._maxTrajectory, 0f, 0f, _projectileDamage, 50f, Entity.EntityId, true, true, true);
-                    //liveProjectiles.Add(projectile);
-                    RailgunCore.AddProjectile(projectile);
-
-                    _isReloading = true;
-                    _currentReloadTicks = 0;
-
-                    //Apply recoil force
-                    var centerOfMass = block.CubeGrid.Physics.CenterOfMassWorld;
-                    var forceVector = -direction * _backkickForce;
-
-                    block.CubeGrid.Physics.AddForce(MyPhysicsForceType.APPLY_WORLD_IMPULSE_AND_WORLD_ANGULAR_IMPULSE, forceVector, block.GetPosition(), null);
-
-                    //MyAPIGateway.Utilities.ShowNotification("Shot", 3000);
+                    _lastShootTime = _currentShootTime;
+                    sink.Update();
+                    _firstUpdate = false;
                 }
-
-                _lastShootTime = _currentShootTime;
-
-                sink.Update();
-
-                _firstUpdate = false;
-                //}
 
                 ShowReloadMessage();
 
@@ -346,6 +360,13 @@ namespace Whiplash.Railgun
                 MyAPIGateway.Utilities.ShowNotification("Exception in update", 16, MyFontEnum.Red);
                 MyLog.Default.WriteLine(e);
             }
+        }
+
+        public void CreateClientProjectile(RailgunFireData data)
+        {
+            var clientProjectile = new ArmorPiercingProjectileSimulation(data.Origin, data.Direction, data.ShooterVelocity, this._desiredSpeed, this._maxTrajectory, 0f, 0f, _projectileDamage, 50f, Entity.EntityId, _trailColor, _trailScale, true, false, false);
+            RailgunCore.AddProjectile(clientProjectile);
+            //soundEmitter.PlaySound(shootSound); //not working and idk why
         }
 
         void GetAmmoProperties()
@@ -366,6 +387,10 @@ namespace Whiplash.Railgun
                 _desiredSpeed = ammo.DesiredSpeed;
                 _projectileDamage = ammo.GetDamageForMechanicalObjects() * 1e5f;
                 _backkickForce = ammo.BackkickForce;
+
+                var projectileAmmo = ammo as MyProjectileAmmoDefinition;
+                _trailColor = projectileAmmo.ProjectileTrailColor;
+                _trailScale = projectileAmmo.ProjectileTrailScale;
             }
             //-------------------------------------------
 
@@ -381,8 +406,14 @@ namespace Whiplash.Railgun
             if (Entity is IMyLargeTurretBase)
             {
                 turret = Entity as IMyLargeTurretBase;
-                _turretMaxRange = turret.GetMaximum<float>("Range");
+                var def = cube.SlimBlock.BlockDefinition as MyLargeTurretBaseDefinition;
+                _turretMaxRange = def.MaxRangeMeters;
+                var ob = (MyObjectBuilder_TurretBase)cube.GetObjectBuilderCubeBlock();
+                ob.Range = _turretMaxRange;
                 GetTurretPowerDrawConstants(_idlePowerDrawBase, _idlePowerDrawMax, _turretMaxRange);
+
+                //_turretMaxRange = turret.GetMaximum<float>("Range");
+                //this.m_shootingRange.SetLocalValue(Math.Min(this.BlockDefinition.MaxRangeMeters, Math.Max(0f, myObjectBuilder_TurretBase.Range)));
             }
         }
 
@@ -450,13 +481,13 @@ namespace Whiplash.Railgun
             return requiredInput;
         }
 
-        long GetLastShootTime()
+        DateTime GetLastShootTime()
         {
             if (cube == null)
-                return -1;
+                return new DateTime(0);
 
             var gun = Entity as IMyGunObject<MyGunBase>;
-            return gun.GunBase.LastShootTime.Ticks;
+            return gun.GunBase.LastShootTime;
 
             /*
             if (Entity is IMyLargeTurretBase)
