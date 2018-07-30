@@ -239,15 +239,15 @@ namespace Whiplash.ArmorPiercingProjectiles
 
                     if (hitPositions.Count == 0)
                     {
-                        MyLog.Default.WriteLine("-------------------No slim block found in intersection");
+                        MyLog.Default.WriteLine("-----No slim block found in intersection");
                         continue;
                     }
 
-                    MyLog.Default.WriteLine($"------------------{hitPositions.Count} slim blocks in intersection");
+                    MyLog.Default.WriteLine($"-----{hitPositions.Count} slim blocks in intersection");
 
                     foreach (var position in hitPositions)
                     {
-                        MyLog.Default.WriteLine("--------------------------------------------");
+                        MyLog.Default.WriteLine("-----");
 
                         slimBlock = grid.GetCubeBlock(position);
                         MyLog.Default.WriteLine($"dist: {Vector3D.DistanceSquared(position, localStart)}");
@@ -273,10 +273,17 @@ namespace Whiplash.ArmorPiercingProjectiles
                             invDamageMultiplier = 1f / cubeDef.GeneralDamageMultiplier;
                         }
 
-                        if (damage > blockIntegrity)
-                            slimBlock.DoDamage(blockIntegrity * invDamageMultiplier, MyStringHash.GetOrCompute("Railgun"), false, default(MyHitInfo), _gunEntityID); //because some blocks have a stupid damage intake modifier
-                        else
-                            slimBlock.DoDamage(invDamageMultiplier * damage, MyStringHash.GetOrCompute("Railgun"), false, default(MyHitInfo), _gunEntityID);
+                        try
+                        {
+                            if (damage > blockIntegrity)
+                                slimBlock.DoDamage(blockIntegrity * invDamageMultiplier, MyStringHash.GetOrCompute("Railgun"), false, default(MyHitInfo), _gunEntityID); //because some blocks have a stupid damage intake modifier
+                            else
+                                slimBlock.DoDamage(invDamageMultiplier * damage, MyStringHash.GetOrCompute("Railgun"), false, default(MyHitInfo), _gunEntityID);
+                        }
+                        catch (Exception ex)
+                        {
+                            MyLog.Default.WriteLine(ex);
+                        }
 
                         if (damage < blockIntegrity)
                         {
