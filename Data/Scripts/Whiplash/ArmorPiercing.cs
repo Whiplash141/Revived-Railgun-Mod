@@ -50,7 +50,6 @@ namespace Whiplash.ArmorPiercingProjectiles
         bool _targetHit = false;
         int _currentTick = 0;
         const int _maxTracerFadeTicks = 120;
-        int _tracerSpawnDelayMs = 300;
         int _currentTracerFadeTicks = 0;
         List<IHitInfo> hitInfo = new List<IHitInfo>();
         long _gunEntityID;
@@ -326,10 +325,6 @@ namespace Whiplash.ArmorPiercingProjectiles
 
         public void DrawTracer()
         {
-            _tracerSpawnDelayMs -= 16;
-            if (_tracerSpawnDelayMs > 0)
-                return;
-
             //draw bullet
             float scaleFactor = MyParticlesManager.Paused ? 1f : MyUtils.GetRandomFloat(1f, 2f);
             float lengthMultiplier = 40f * _tracerScale;
@@ -338,7 +333,7 @@ namespace Whiplash.ArmorPiercingProjectiles
             float thickness = (MyParticlesManager.Paused ? 0.2f : MyUtils.GetRandomFloat(0.2f, 0.3f)) * _tracerScale;
             thickness *= MathHelper.Lerp(0.2f, 0.8f, 1f/*MySector.MainCamera.Zoom.GetZoomLevel()*/);
 
-            if (lengthMultiplier > 0f && !_targetHit)
+            if (lengthMultiplier > 0f && !_targetHit && Vector3D.DistanceSquared(_position, _origin) > lengthMultiplier * lengthMultiplier)
                 MyTransparentGeometry.AddLineBillboard(bulletMaterial, new Vector4(_tracerColor * scaleFactor * 10f, 1f), startPoint, _direction, lengthMultiplier, thickness);
 
             if (_targetHit)

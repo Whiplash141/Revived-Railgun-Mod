@@ -77,7 +77,6 @@ namespace Whiplash.Railgun
             var projectile = new ArmorPiercingProjectileSimulation(fireData, projectileData);
             AddProjectile(projectile);
             RailgunMessage.SendToClients(fireData);
-            //MyAPIGateway.Utilities.ShowMessage("Railgun", $"Server fire: {DateTime.UtcNow.Second}:{DateTime.UtcNow.Millisecond}");
         }
 
         public static void ShootProjectileClient(RailgunFireData fireData)
@@ -89,7 +88,6 @@ namespace Whiplash.Railgun
 
             var projectile = new ArmorPiercingProjectileSimulation(fireData, projectileData);
             AddProjectile(projectile);
-            //MyAPIGateway.Utilities.ShowMessage("Railgun", $"Client fire: {DateTime.UtcNow.Second}:{DateTime.UtcNow.Millisecond}");
         }
 
         public static void AddProjectile(ArmorPiercingProjectileSimulation projectile)
