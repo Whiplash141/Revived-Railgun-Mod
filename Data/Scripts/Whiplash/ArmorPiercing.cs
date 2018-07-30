@@ -22,6 +22,7 @@ using VRage.Game.Entity;
 using Sandbox.Game.Entities;
 using VRage.Game.ModAPI.Interfaces;
 using Sandbox.Definitions;
+using Whiplash.Railgun;
 
 namespace Whiplash.ArmorPiercingProjectiles
 {
@@ -78,6 +79,31 @@ namespace Whiplash.ArmorPiercingProjectiles
             _maxTrajectory = maxTrajectory;
             _projectileSpeed = projectileSpeed;
             _velocityCombined = shooterVelocity + _direction * _projectileSpeed;
+        }
+
+        public ArmorPiercingProjectileSimulation(RailgunFireData fireData, RailgunProjectileData projectileData)
+        {
+            //weapon data
+            _tracerColor = projectileData.ProjectileTrailColor;
+            _lineColor = new Vector4(_tracerColor, 1f);
+            _tracerScale = projectileData.ProjectileTrailScale;
+            _drawTracer = projectileData.DrawTracer;
+            _shouldPenetrate = projectileData.Penetrate;
+            _shouldExplode = projectileData.Explode;
+            _penetrationDamage = projectileData.PenetrationDamage;
+            _penetrationRange = projectileData.PenetrationRange;
+            _explosionRadius = projectileData.ExplosionRadius;
+            _explosionDamage = projectileData.ExplosionDamage;
+            _maxTrajectory = projectileData.MaxTrajectory;
+            _projectileSpeed = projectileData.DesiredSpeed;
+
+            //fire data
+            var temp = fireData.Direction;
+            _direction = Vector3D.IsUnit(ref temp) ? temp : Vector3D.Normalize(temp);
+            _origin = fireData.Origin;
+            _position = _origin;
+            _gunEntityID = 0;
+            _velocityCombined = fireData.ShooterVelocity + _direction * _projectileSpeed;
         }
 
         public void Update(bool isServer)

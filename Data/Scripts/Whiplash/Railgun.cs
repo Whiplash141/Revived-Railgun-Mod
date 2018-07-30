@@ -177,6 +177,21 @@ namespace Whiplash.Railgun
         }
     }
 
+    public struct RailgunProjectileData
+    {
+        public float DesiredSpeed;
+        public float MaxTrajectory;
+        public float ExplosionDamage;
+        public float ExplosionRadius;
+        public float PenetrationDamage;
+        public float PenetrationRange;
+        public Vector3 ProjectileTrailColor;
+        public float ProjectileTrailScale;
+        public bool DrawTracer;
+        public bool Explode;
+        public bool Penetrate;
+    }
+
     public class Railgun : MyGameLogicComponent
     {
         IMyFunctionalBlock block;
@@ -210,6 +225,8 @@ namespace Whiplash.Railgun
 
         MySoundPair shootSound = new MySoundPair("WepShipLargeRailgunShotLZM");
         MyEntity3DSoundEmitter soundEmitter;
+
+        RailgunProjectileData projectileData;
 
         public bool _settingsDirty;
 
@@ -270,12 +287,36 @@ namespace Whiplash.Railgun
                 GetTurretMaxRange();
 
                 soundEmitter = new MyEntity3DSoundEmitter((MyEntity)Entity, true);
+
+                projectileData = new RailgunProjectileData()
+                {
+                    DesiredSpeed = _desiredSpeed,
+                    MaxTrajectory = _maxTrajectory,
+                    ExplosionDamage = 0f,
+                    ExplosionRadius = 0f,
+                    PenetrationDamage = _projectileDamage,
+                    PenetrationRange = 50f,
+                    ProjectileTrailColor = _trailColor,
+                    ProjectileTrailScale = _trailScale,
+                    DrawTracer = true,
+                    Explode = true,
+                    Penetrate = true
+                };
+
+                RailgunCore.RegisterRailgun(Entity.EntityId, projectileData);
             }
             catch (Exception e)
             {
                 MyAPIGateway.Utilities.ShowNotification("Exception in init", 10000, MyFontEnum.Red);
                 MyLog.Default.WriteLine(e);
             }
+        }
+
+        public override void Close()
+        {
+            base.Close();
+            //remove from dict
+            RailgunCore.UnregisterRailgun(Entity.EntityId);
         }
 
         public override void UpdateOnceBeforeFrame()
@@ -323,16 +364,17 @@ namespace Whiplash.Railgun
                         }
 
                         var velocity = block.CubeGrid.Physics.LinearVelocity;
-                        var projectile = new ArmorPiercingProjectileSimulation(origin, direction, velocity, this._desiredSpeed, this._maxTrajectory, 0f, 0f, _projectileDamage, 50f, Entity.EntityId, _trailColor, _trailScale, true, true, true);
-                        var projectileData = new RailgunFireData()
+                        //var projectile = new ArmorPiercingProjectileSimulation(origin, direction, velocity, this._desiredSpeed, this._maxTrajectory, 0f, 0f, _projectileDamage, 50f, Entity.EntityId, _trailColor, _trailScale, true, true, true);
+                        var fireData = new RailgunFireData()
                         {
                             ShooterVelocity = velocity,
                             Origin = origin,
                             Direction = direction,
-                            ShooterID = Entity.EntityId,
+                            ShooterID = Entity.EntityId
                         };
-                        RailgunMessage.SendToClients(projectileData);
-                        RailgunCore.AddProjectile(projectile);
+
+                        RailgunCore.ShootProjectileServer(fireData);
+                        //RailgunCore.AddProjectile(projectile);
 
                         _isReloading = true;
                         _currentReloadTicks = 0;
@@ -360,13 +402,6 @@ namespace Whiplash.Railgun
                 MyAPIGateway.Utilities.ShowNotification("Exception in update", 16, MyFontEnum.Red);
                 MyLog.Default.WriteLine(e);
             }
-        }
-
-        public void CreateClientProjectile(RailgunFireData data)
-        {
-            var clientProjectile = new ArmorPiercingProjectileSimulation(data.Origin, data.Direction, data.ShooterVelocity, this._desiredSpeed, this._maxTrajectory, 0f, 0f, _projectileDamage, 50f, Entity.EntityId, _trailColor, _trailScale, true, false, false);
-            RailgunCore.AddProjectile(clientProjectile);
-            //soundEmitter.PlaySound(shootSound); //not working and idk why
         }
 
         void GetAmmoProperties()

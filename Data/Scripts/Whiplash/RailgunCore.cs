@@ -21,6 +21,7 @@ namespace Whiplash.Railgun
         private static bool _init;
         private int _count;
         static List<ArmorPiercingProjectileSimulation> liveProjectiles = new List<ArmorPiercingProjectileSimulation>();
+        static Dictionary<long, RailgunProjectileData> railgunDataDict = new Dictionary<long, RailgunProjectileData>();
 
         public override void UpdateAfterSimulation()
         {
@@ -66,9 +67,45 @@ namespace Whiplash.Railgun
             }
         }
 
+        public static void ShootProjectileServer(RailgunFireData fireData)
+        {
+            RailgunProjectileData projectileData;
+            bool registered = railgunDataDict.TryGetValue(fireData.ShooterID, out projectileData);
+            if (!registered)
+                return;
+
+            var projectile = new ArmorPiercingProjectileSimulation(fireData, projectileData);
+            AddProjectile(projectile);
+            RailgunMessage.SendToClients(fireData);
+            //MyAPIGateway.Utilities.ShowMessage("Railgun", $"Server fire: {DateTime.UtcNow.Second}:{DateTime.UtcNow.Millisecond}");
+        }
+
+        public static void ShootProjectileClient(RailgunFireData fireData)
+        {
+            RailgunProjectileData projectileData;
+            bool registered = railgunDataDict.TryGetValue(fireData.ShooterID, out projectileData);
+            if (!registered)
+                return;
+
+            var projectile = new ArmorPiercingProjectileSimulation(fireData, projectileData);
+            AddProjectile(projectile);
+            //MyAPIGateway.Utilities.ShowMessage("Railgun", $"Client fire: {DateTime.UtcNow.Second}:{DateTime.UtcNow.Millisecond}");
+        }
+
         public static void AddProjectile(ArmorPiercingProjectileSimulation projectile)
         {
             liveProjectiles.Add(projectile);
+        }
+
+        public static void RegisterRailgun(long entityID, RailgunProjectileData data)
+        {
+            railgunDataDict[entityID] = data;
+        }
+
+        public static void UnregisterRailgun(long entityID)
+        {
+            if (railgunDataDict.ContainsKey(entityID))
+                railgunDataDict.Remove(entityID);
         }
 
         private void Initialize()

@@ -24,7 +24,7 @@ using VRage.Utils;
 using VRageMath;
 using ProtoBuf;
 
-namespace Whiplash
+namespace Whiplash.Railgun
 {
     [MySessionComponentDescriptor(MyUpdateOrder.BeforeSimulation)]
     public class RailgunMessage : MySessionComponentBase
@@ -54,7 +54,6 @@ namespace Whiplash
             bool sendStatus = MyAPIGateway.Multiplayer.SendMessageToOthers(NetID, sendData);    
         }
 
-
         public static void ProcessClient(byte[] data)
         {
             if (MyAPIGateway.Utilities.IsDedicated || (!MyAPIGateway.Utilities.IsDedicated && MyAPIGateway.Multiplayer.IsServer))
@@ -68,11 +67,8 @@ namespace Whiplash
             var entityExists = MyAPIGateway.Entities.TryGetEntityById(receivedData.ShooterID, out ent);
             if (entityExists)
             {
-                var railgunComp = ent.GameLogic.GetAs<Railgun.Railgun>();
-                if (railgunComp != null)
-                    railgunComp.CreateClientProjectile(receivedData);
+                RailgunCore.ShootProjectileClient(receivedData);
             }
-
         }
 
         protected override void UnloadData()
