@@ -524,7 +524,7 @@ namespace Whiplash.Railgun
                 return requiredInput;
             }
 
-            var scaledReloadPowerDraw = _reloadPowerDraw - _currentReloadTicks * _powerDrawDecrementPerTick;
+            var scaledReloadPowerDraw = _reloadPowerDraw; // - _currentReloadTicks * _powerDrawDecrementPerTick;
             requiredInput = Math.Max(requiredInput, scaledReloadPowerDraw);
             sink.SetMaxRequiredInputByType(resourceId, requiredInput);
             return requiredInput;
