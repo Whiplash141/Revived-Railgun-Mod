@@ -201,7 +201,6 @@ namespace Whiplash.Railgun
         IMyGunObject<MyGunBase> gun;
         DateTime _lastShootTime;
         DateTime _currentShootTime;
-        //List<ArmorPiercingProjectileSimulation> liveProjectiles = new List<ArmorPiercingProjectileSimulation>();
         float _maxTrajectory;
         float _desiredSpeed;
         float _projectileDamage;
@@ -209,9 +208,9 @@ namespace Whiplash.Railgun
         float _backkickForce;
         float _deviationAngle;
         int _reloadTime;
-        int _reloadTicks;
+        float _reloadTicks;
+        float _currentReloadTicks = 0;
         int _ticksSinceLastReload = 0;
-        int _currentReloadTicks = 0;
         bool _isReloading = false;
         bool _enabledStatus = true;
         bool _firstUpdate = true;
@@ -219,7 +218,7 @@ namespace Whiplash.Railgun
         const float _idlePowerDrawMax = 20f; //MW
         const float _reloadPowerDraw = 200f; //MW
         float _powerDrawDecrementPerTick;
-        private static readonly MyDefinitionId resourceId = MyResourceDistributorComponent.ElectricityId; //new MyDefinitionId(typeof(MyObjectBuilder_GasProperties), "Electricity");
+        private static readonly MyDefinitionId resourceId = MyResourceDistributorComponent.ElectricityId;
         Vector3 _trailColor;
         float _trailScale;
         MyResourceSinkComponent sink;
@@ -431,6 +430,7 @@ namespace Whiplash.Railgun
                 var projectileAmmo = ammo as MyProjectileAmmoDefinition;
                 _trailColor = projectileAmmo.ProjectileTrailColor;
                 _trailScale = projectileAmmo.ProjectileTrailScale;
+                projectileAmmo.ProjectileTrailProbability = 0f; //disable default tracers
             }
             //-------------------------------------------
 
@@ -439,7 +439,7 @@ namespace Whiplash.Railgun
 
             //Compute reload ticks
             _reloadTime = wepDef.ReloadTime;
-            _reloadTicks = (int)(_reloadTime / 1000f * 60f);
+            _reloadTicks = (_reloadTime / 1000f * 60f);
             _powerDrawDecrementPerTick = (_reloadPowerDraw - _idlePowerDrawBase) / _reloadTicks;
         }
 
@@ -471,7 +471,7 @@ namespace Whiplash.Railgun
                 RequiredInputFunc = () => GetPowerInput()
             };
             sink.RemoveType(ref resourceInfo.ResourceTypeId);
-            sink.Init(MyStringHash.GetOrCompute("Defense"), resourceInfo); //sink.Init(MyStringHash.GetOrCompute("Defense"), turret == null ? _idlePowerDrawBase : _idlePowerDrawMax, () => GetPowerInput());
+            sink.Init(MyStringHash.GetOrCompute("Thrust"), resourceInfo); //sink.Init(MyStringHash.GetOrCompute("Defense"), turret == null ? _idlePowerDrawBase : _idlePowerDrawMax, () => GetPowerInput());
             sink.AddType(ref resourceInfo);
         }
 
@@ -505,8 +505,14 @@ namespace Whiplash.Railgun
             }
 
             //if (block.IsWorking) //check if power is overloaded
-            if (count && sink.IsPoweredByType(resourceId)) //SuppliedRatioByType(resourceId) == 1f)
-                _currentReloadTicks++;
+            if (count) //&& sink.IsPoweredByType(resourceId)) //SuppliedRatioByType(resourceId) == 1f)
+            {
+                var suppliedRatio = sink.SuppliedRatioByType(resourceId);
+                if (suppliedRatio == 1)
+                    _currentReloadTicks += 1;
+                else
+                    _currentReloadTicks += suppliedRatio * 0.5f; // nerfed recharge rate if overloaded
+            }
 
             if (_currentReloadTicks >= _reloadTicks)
             {
@@ -542,7 +548,7 @@ namespace Whiplash.Railgun
                 if (player == null)
                     return;
 
-                MyVisualScriptLogicProvider.ShowNotification($"Railgun reloading ({100 * _currentReloadTicks / _reloadTicks}%)", 16, MyFontEnum.White, player.IdentityId);
+                MyVisualScriptLogicProvider.ShowNotification($"Railgun reloading ({100 * _currentReloadTicks / _reloadTicks:n0}%)", 16, MyFontEnum.White, player.IdentityId);
             }
         }
 
