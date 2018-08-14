@@ -8,7 +8,7 @@
             </Id>
             <ProjectileAmmoData RateOfFire="60" ShootSoundName="WepShipLargeRailgunShotLZM" ShotsInBurst="1"/> 
             <NoAmmoSoundName>WepShipLargeRailgunDryLZM</NoAmmoSoundName>
-            <DeviateShotAngle>0</DeviateShotAngle>
+            <DeviateShotAngle>0.01</DeviateShotAngle>
             <ReleaseTimeAfterFire>3000</ReleaseTimeAfterFire>
             <MuzzleFlashLifeSpan>0</MuzzleFlashLifeSpan>
             <AmmoMagazines>

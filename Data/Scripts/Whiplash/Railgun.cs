@@ -185,6 +185,7 @@ namespace Whiplash.Railgun
         public float ExplosionRadius;
         public float PenetrationDamage;
         public float PenetrationRange;
+        public float DeviationAngle;
         public Vector3 ProjectileTrailColor;
         public float ProjectileTrailScale;
         public bool DrawTracer;
@@ -197,6 +198,7 @@ namespace Whiplash.Railgun
         IMyFunctionalBlock block;
         IMyCubeBlock cube;
         IMyLargeTurretBase turret;
+        IMyGunObject<MyGunBase> gun;
         DateTime _lastShootTime;
         DateTime _currentShootTime;
         //List<ArmorPiercingProjectileSimulation> liveProjectiles = new List<ArmorPiercingProjectileSimulation>();
@@ -205,6 +207,7 @@ namespace Whiplash.Railgun
         float _projectileDamage;
         float _turretMaxRange;
         float _backkickForce;
+        float _deviationAngle;
         int _reloadTime;
         int _reloadTicks;
         int _ticksSinceLastReload = 0;
@@ -278,6 +281,7 @@ namespace Whiplash.Railgun
 
                 cube = (IMyCubeBlock)Entity;
                 block = (IMyFunctionalBlock)Entity;
+                gun = Entity as IMyGunObject<MyGunBase>;
 
                 GetAmmoProperties();
 
@@ -296,6 +300,7 @@ namespace Whiplash.Railgun
                     ExplosionRadius = 0f,
                     PenetrationDamage = _projectileDamage,
                     PenetrationRange = 50f,
+                    DeviationAngle = _deviationAngle,
                     ProjectileTrailColor = _trailColor,
                     ProjectileTrailScale = _trailScale,
                     DrawTracer = true,
@@ -429,6 +434,9 @@ namespace Whiplash.Railgun
             }
             //-------------------------------------------
 
+            //Get deviation angle
+            _deviationAngle = gun.GunBase.DeviateAngle;
+
             //Compute reload ticks
             _reloadTime = wepDef.ReloadTime;
             _reloadTicks = (int)(_reloadTime / 1000f * 60f);
@@ -521,15 +529,7 @@ namespace Whiplash.Railgun
             if (cube == null)
                 return new DateTime(0);
 
-            var gun = Entity as IMyGunObject<MyGunBase>;
             return gun.GunBase.LastShootTime;
-
-            /*
-            if (Entity is IMyLargeTurretBase)
-                return ((MyObjectBuilder_LargeGatlingTurret)cube.GetObjectBuilderCubeBlock()).GunBase.LastShootTime;
-            else
-                return ((MyObjectBuilder_SmallMissileLauncher)cube.GetObjectBuilderCubeBlock()).GunBase.LastShootTime;
-            */
         }
 
         void ShowReloadMessage()

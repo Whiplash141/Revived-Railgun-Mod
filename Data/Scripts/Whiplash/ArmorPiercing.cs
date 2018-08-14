@@ -40,6 +40,7 @@ namespace Whiplash.ArmorPiercingProjectiles
         float _minimumArmDistance = 0f;
         float _penetrationRange;
         float _penetrationDamage;
+        float _deviationAngle;
         int _checkIntersectionIndex = 4;
         const float _tick = 1f / 60f;
         public bool Killed = false;
@@ -74,14 +75,25 @@ namespace Whiplash.ArmorPiercingProjectiles
             _explosionDamage = projectileData.ExplosionDamage;
             _maxTrajectory = projectileData.MaxTrajectory;
             _projectileSpeed = projectileData.DesiredSpeed;
+            _deviationAngle = projectileData.DeviationAngle;
 
             //fire data
             var temp = fireData.Direction;
             _direction = Vector3D.IsUnit(ref temp) ? temp : Vector3D.Normalize(temp);
+            _direction = GetDeviatedVector(_direction, _deviationAngle);
             _origin = fireData.Origin;
             _position = _origin;
             _gunEntityID = 0;
             _velocityCombined = fireData.ShooterVelocity + _direction * _projectileSpeed;
+        }
+
+        public static Vector3 GetDeviatedVector(Vector3 direction, float deviationAngle)
+        {
+            float elevationAngle = MyUtils.GetRandomFloat(-deviationAngle, deviationAngle);
+            float rotationAngle = MyUtils.GetRandomFloat(0f, MathHelper.TwoPi);
+            Vector3 normal = -new Vector3(MyMath.FastSin(elevationAngle) * MyMath.FastCos(rotationAngle), MyMath.FastSin(elevationAngle) * MyMath.FastSin(rotationAngle), MyMath.FastCos(elevationAngle));
+            var mat = Matrix.CreateFromDir(direction);
+            return Vector3.TransformNormal(normal, mat);
         }
 
         public void Update(bool isServer)
