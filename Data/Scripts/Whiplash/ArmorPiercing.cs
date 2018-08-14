@@ -41,7 +41,7 @@ namespace Whiplash.ArmorPiercingProjectiles
         float _penetrationRange;
         float _penetrationDamage;
         int _checkIntersectionIndex = 4;
-        const float tick = 1f / 60f;
+        const float _tick = 1f / 60f;
         public bool Killed = false;
         bool _positionChecked = false;
         bool _shouldExplode;
@@ -58,27 +58,6 @@ namespace Whiplash.ArmorPiercingProjectiles
         MyStringId bulletMaterial = MyStringId.GetOrCompute("ProjectileTrailLine");
         Vector3 _tracerColor;
         float _tracerScale;
-
-        public ArmorPiercingProjectileSimulation(Vector3D origin, Vector3D direction, Vector3D shooterVelocity, float projectileSpeed, float maxTrajectory, float explosionDamage, float explosionRadius, float penetrationDamage, float penetrationRange, long gunEntityID, Vector3? tracerColor = null, float tracerScale = 0, bool drawTracer = false, bool explode = true, bool penetrate = true)
-        {
-            _tracerColor = tracerColor.HasValue ? tracerColor.Value : Vector3.Zero;
-            _lineColor = new Vector4(_tracerColor, 1f);
-            _tracerScale = tracerScale;
-            _drawTracer = drawTracer;
-            _shouldPenetrate = penetrate;
-            _shouldExplode = explode;
-            _penetrationDamage = penetrationDamage;
-            _penetrationRange = penetrationRange;
-            _gunEntityID = gunEntityID;
-            _direction = Vector3D.IsUnit(ref direction) ? direction : Vector3D.Normalize(direction);
-            _origin = origin;
-            _position = _origin;
-            _explosionRadius = explosionRadius;
-            _explosionDamage = explosionDamage;
-            _maxTrajectory = maxTrajectory;
-            _projectileSpeed = projectileSpeed;
-            _velocityCombined = shooterVelocity + _direction * _projectileSpeed;
-        }
 
         public ArmorPiercingProjectileSimulation(RailgunFireData fireData, RailgunProjectileData projectileData)
         {
@@ -113,7 +92,7 @@ namespace Whiplash.ArmorPiercingProjectiles
                 return;
             }
 
-            _position += _velocityCombined * tick;
+            _position += _velocityCombined * _tick;
             var _toOrigin = _position - _origin;
 
             //draw tracer line
@@ -140,8 +119,8 @@ namespace Whiplash.ArmorPiercingProjectiles
                 return;
             }
 
-            var to = _position + 5.0 * _velocityCombined * tick;
-            var from = _positionChecked ? _position : _origin;
+            var to = _position + 5.0 * _velocityCombined * _tick;
+            var from = _position; // _positionChecked ? _position : _origin;
             _positionChecked = true;
 
             MyAPIGateway.Physics.CastRay(from, to, hitInfo);

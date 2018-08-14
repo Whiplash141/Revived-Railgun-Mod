@@ -23,6 +23,11 @@ namespace Whiplash.Railgun
         static List<ArmorPiercingProjectileSimulation> liveProjectiles = new List<ArmorPiercingProjectileSimulation>();
         static Dictionary<long, RailgunProjectileData> railgunDataDict = new Dictionary<long, RailgunProjectileData>();
 
+        public static int CountRegisteredRailguns()
+        {
+            return railgunDataDict.Count;
+        }
+
         public override void UpdateAfterSimulation()
         {
             if (!_init)
