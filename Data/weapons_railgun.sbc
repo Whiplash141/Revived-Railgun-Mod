@@ -6,7 +6,7 @@
                 <TypeId>WeaponDefinition</TypeId>
                 <SubtypeId>LargeShipRailgunLZM</SubtypeId>
             </Id>
-            <ProjectileAmmoData RateOfFire="60" ShootSoundName="WepShipLargeRailgunShotLZM" ShotsInBurst="1"/> 
+            <ProjectileAmmoData RateOfFire="5" ShootSoundName="WepShipLargeRailgunShotLZM"/> 
             <NoAmmoSoundName>WepShipLargeRailgunDryLZM</NoAmmoSoundName>
             <DeviateShotAngle>0.01</DeviateShotAngle>
             <ReleaseTimeAfterFire>3000</ReleaseTimeAfterFire>
@@ -14,7 +14,7 @@
             <AmmoMagazines>
                 <AmmoMagazine Subtype="NiFeDUSlugMagazineLZM" />
             </AmmoMagazines>
-            <ReloadTime>12000</ReloadTime>
+            <ReloadTime>0</ReloadTime>
         </Weapon>
     </Weapons>
 </Definitions>

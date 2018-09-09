@@ -345,16 +345,19 @@ namespace Whiplash.Railgun
                 if (cube?.CubeGrid?.Physics == null) //ignore ghost grids
                     return;
 
-                if (MyAPIGateway.Multiplayer.IsServer)
+                    
+                _currentShootTime = GetLastShootTime();
+                
+                if (_currentShootTime != _lastShootTime && !_firstUpdate)
                 {
-                    Vector3D direction;
-                    Vector3D origin;
-
-                    _currentShootTime = GetLastShootTime();
+                    _isReloading = true;
 
                     //fire weapon
-                    if (_currentShootTime != _lastShootTime && !_firstUpdate)
+                    if (MyAPIGateway.Multiplayer.IsServer)
                     {
+                        Vector3D direction;
+                        Vector3D origin;
+                        
                         if (Entity is IMyLargeTurretBase)
                         {
                             Vector3D.CreateFromAzimuthAndElevation(turret.Azimuth, turret.Elevation, out direction);
@@ -368,7 +371,7 @@ namespace Whiplash.Railgun
                         }
 
                         var velocity = block.CubeGrid.Physics.LinearVelocity;
-                        //var projectile = new ArmorPiercingProjectileSimulation(origin, direction, velocity, this._desiredSpeed, this._maxTrajectory, 0f, 0f, _projectileDamage, 50f, Entity.EntityId, _trailColor, _trailScale, true, true, true);
+
                         var fireData = new RailgunFireData()
                         {
                             ShooterVelocity = velocity,
@@ -378,9 +381,7 @@ namespace Whiplash.Railgun
                         };
 
                         RailgunCore.ShootProjectileServer(fireData);
-                        //RailgunCore.AddProjectile(projectile);
 
-                        _isReloading = true;
                         _currentReloadTicks = 0;
 
                         //Apply recoil force
@@ -388,18 +389,13 @@ namespace Whiplash.Railgun
                         var forceVector = -direction * _backkickForce;
 
                         block.CubeGrid.Physics.AddForce(MyPhysicsForceType.APPLY_WORLD_IMPULSE_AND_WORLD_ANGULAR_IMPULSE, forceVector, block.GetPosition(), null);
-
-                        //MyAPIGateway.Utilities.ShowNotification("Shot", 3000);
-                    }
-
-                    _lastShootTime = _currentShootTime;
-                    sink.Update();
-                    _firstUpdate = false;
+                    } 
                 }
 
+                _lastShootTime = _currentShootTime;
+                _firstUpdate = false;
+                sink.Update();
                 ShowReloadMessage();
-
-                //MyAPIGateway.Utilities.ShowNotification($"Power draw: {GetPowerInput(false):n0} MW | reloading?: {_isReloading} | max: {sink.MaxRequiredInputByType(resourceId)} | current ticks {_currentReloadTicks}", 16, MyFontEnum.Blue);
             }
             catch (Exception e)
             {
@@ -438,7 +434,7 @@ namespace Whiplash.Railgun
             _deviationAngle = gun.GunBase.DeviateAngle;
 
             //Compute reload ticks
-            _reloadTime = wepDef.ReloadTime;
+            _reloadTime = gun.GunBase.ShootIntervalInMiliseconds; //wepDef.ReloadTime;
             _reloadTicks = (_reloadTime / 1000f * 60f);
             _powerDrawDecrementPerTick = (_reloadPowerDraw - _idlePowerDrawBase) / _reloadTicks;
         }
@@ -454,9 +450,6 @@ namespace Whiplash.Railgun
                 var ob = (MyObjectBuilder_TurretBase)cube.GetObjectBuilderCubeBlock();
                 ob.Range = _turretMaxRange;
                 GetTurretPowerDrawConstants(_idlePowerDrawBase, _idlePowerDrawMax, _turretMaxRange);
-
-                //_turretMaxRange = turret.GetMaximum<float>("Range");
-                //this.m_shootingRange.SetLocalValue(Math.Min(this.BlockDefinition.MaxRangeMeters, Math.Max(0f, myObjectBuilder_TurretBase.Range)));
             }
         }
 
@@ -471,7 +464,7 @@ namespace Whiplash.Railgun
                 RequiredInputFunc = () => GetPowerInput()
             };
             sink.RemoveType(ref resourceInfo.ResourceTypeId);
-            sink.Init(MyStringHash.GetOrCompute("Thrust"), resourceInfo); //sink.Init(MyStringHash.GetOrCompute("Defense"), turret == null ? _idlePowerDrawBase : _idlePowerDrawMax, () => GetPowerInput());
+            sink.Init(MyStringHash.GetOrCompute("Thrust"), resourceInfo);
             sink.AddType(ref resourceInfo);
         }
 
@@ -504,8 +497,7 @@ namespace Whiplash.Railgun
                 return requiredInput;
             }
 
-            //if (block.IsWorking) //check if power is overloaded
-            if (count) //&& sink.IsPoweredByType(resourceId)) //SuppliedRatioByType(resourceId) == 1f)
+            if (count) 
             {
                 var suppliedRatio = sink.SuppliedRatioByType(resourceId);
                 if (suppliedRatio == 1)
@@ -524,7 +516,7 @@ namespace Whiplash.Railgun
                 return requiredInput;
             }
 
-            var scaledReloadPowerDraw = _reloadPowerDraw - _currentReloadTicks * _powerDrawDecrementPerTick;
+            var scaledReloadPowerDraw = _reloadPowerDraw; //_reloadPowerDraw - _currentReloadTicks * _powerDrawDecrementPerTick;
             requiredInput = Math.Max(requiredInput, scaledReloadPowerDraw);
             sink.SetMaxRequiredInputByType(resourceId, requiredInput);
             return requiredInput;
@@ -539,16 +531,25 @@ namespace Whiplash.Railgun
         }
 
         void ShowReloadMessage()
-        {
+        {           
             var s = Settings.GetSettings(Entity);
+            
             if (_isReloading && s.Recharging)
             {
-                IMyPlayer player = MyAPIGateway.Players.GetPlayerControllingEntity(block.CubeGrid);
-
-                if (player == null)
+                if (MyAPIGateway.Utilities.IsDedicated)
                     return;
 
-                MyVisualScriptLogicProvider.ShowNotification($"Railgun reloading ({100 * _currentReloadTicks / _reloadTicks:n0}%)", 16, MyFontEnum.White, player.IdentityId);
+                IMyShipController cockpit = MyAPIGateway.Session.Player?.Controller?.ControlledEntity?.Entity as IMyShipController;
+                if (cockpit == null)
+                {
+                    IMyLargeTurretBase turret = MyAPIGateway.Session.Player?.Controller?.ControlledEntity?.Entity as IMyLargeTurretBase;
+                    if (turret == null)
+                    {
+                        return;
+                    }
+                }
+
+                MyAPIGateway.Utilities.ShowNotification($"Railgun reloading ({100 * _currentReloadTicks / _reloadTicks:n0}%)", 16);
             }
         }
 
