@@ -20,7 +20,7 @@ namespace Whiplash.Railgun
         public static bool IsServer;
         private static bool _init;
         private int _count;
-        static List<ArmorPiercingProjectileSimulation> liveProjectiles = new List<ArmorPiercingProjectileSimulation>();
+        static List<ArmorPiercingProjectile> liveProjectiles = new List<ArmorPiercingProjectile>();
         static Dictionary<long, RailgunProjectileData> railgunDataDict = new Dictionary<long, RailgunProjectileData>();
 
         public static int CountRegisteredRailguns()
@@ -42,33 +42,25 @@ namespace Whiplash.Railgun
 
         public override void UpdateBeforeSimulation()
         {
-            //if (MyAPIGateway.Multiplayer.IsServer)
-            SimulateProjectiles(MyAPIGateway.Multiplayer.IsServer);
-
-            if (!MyAPIGateway.Utilities.IsDedicated)
-                DrawProjectileTracers();
+            if (MyAPIGateway.Multiplayer.IsServer)
+                SimulateProjectiles();
 
             //MyAPIGateway.Utilities.ShowNotification($"projectiles: {liveProjectiles.Count}", 16);
         }
 
-        private static void SimulateProjectiles(bool isServer)
+        private static void SimulateProjectiles()
         {
             //projectile simulation
             for (int i = liveProjectiles.Count - 1; i >= 0; i--)
             {
                 var projectile = liveProjectiles[i];
-                projectile.Update(isServer);
+                projectile.Update();
 
                 if (projectile.Killed)
                     liveProjectiles.RemoveAt(i);
-            }
-        }
 
-        private static void DrawProjectileTracers()
-        {
-            foreach (var projectile in liveProjectiles)
-            {
-                projectile.DrawTracer();
+                var tracerData = projectile.GetTracerData();
+                RailgunMessage.SendToClients(tracerData);
             }
         }
 
@@ -79,23 +71,22 @@ namespace Whiplash.Railgun
             if (!registered)
                 return;
 
-            var projectile = new ArmorPiercingProjectileSimulation(fireData, projectileData);
+            var projectile = new ArmorPiercingProjectile(fireData, projectileData);
             AddProjectile(projectile);
-            RailgunMessage.SendToClients(fireData);
         }
 
-        public static void ShootProjectileClient(RailgunFireData fireData)
+        public static void DrawProjectileClient(RailgunTracerData tracerData)
         {
             RailgunProjectileData projectileData;
-            bool registered = railgunDataDict.TryGetValue(fireData.ShooterID, out projectileData);
+            bool registered = railgunDataDict.TryGetValue(tracerData.ShooterID, out projectileData);
             if (!registered)
                 return;
 
-            var projectile = new ArmorPiercingProjectileSimulation(fireData, projectileData);
-            AddProjectile(projectile);
+            var projectile = new ArmorPiercingProjectileClient(tracerData, projectileData);
+            projectile.DrawTracer();
         }
 
-        public static void AddProjectile(ArmorPiercingProjectileSimulation projectile)
+        public static void AddProjectile(ArmorPiercingProjectile projectile)
         {
             liveProjectiles.Add(projectile);
         }

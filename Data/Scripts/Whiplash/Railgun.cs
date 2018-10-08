@@ -179,6 +179,7 @@ namespace Whiplash.Railgun
 
     public struct RailgunProjectileData
     {
+        public long ShooterID;
         public float DesiredSpeed;
         public float MaxTrajectory;
         public float ExplosionDamage;
@@ -191,6 +192,14 @@ namespace Whiplash.Railgun
         public bool DrawTracer;
         public bool Explode;
         public bool Penetrate;
+    }
+
+    public struct RailgunFireData
+    {
+        public Vector3D Origin;
+        public Vector3D Direction;
+        public Vector3D ShooterVelocity;
+        public long ShooterID;
     }
 
     public class Railgun : MyGameLogicComponent
@@ -225,7 +234,7 @@ namespace Whiplash.Railgun
         //public bool Recharge = true;
         MyObjectBuilder_EntityBase _objectBuilder;
 
-        MySoundPair shootSound = new MySoundPair("WepShipLargeRailgunShotLZM");
+        readonly MySoundPair shootSound = new MySoundPair("WepShipLargeRailgunShotLZM");
         MyEntity3DSoundEmitter soundEmitter;
 
         RailgunProjectileData projectileData;
@@ -293,6 +302,7 @@ namespace Whiplash.Railgun
 
                 projectileData = new RailgunProjectileData()
                 {
+                    ShooterID = Entity.EntityId,
                     DesiredSpeed = _desiredSpeed,
                     MaxTrajectory = _maxTrajectory,
                     ExplosionDamage = 0f,
@@ -307,7 +317,7 @@ namespace Whiplash.Railgun
                     Penetrate = true
                 };
 
-                RailgunCore.RegisterRailgun(Entity.EntityId, projectileData);
+                RailgunCore.RegisterRailgun(projectileData.ShooterID, projectileData);
             }
             catch (Exception e)
             {
@@ -345,7 +355,6 @@ namespace Whiplash.Railgun
                 if (cube?.CubeGrid?.Physics == null) //ignore ghost grids
                     return;
 
-                    
                 _currentShootTime = GetLastShootTime();
                 
                 if (_currentShootTime != _lastShootTime && !_firstUpdate)
