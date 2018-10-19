@@ -32,7 +32,8 @@ namespace Whiplash.ArmorPiercingProjectiles
     {
         Vector3D _origin;
         Vector3D _position;
-        Vector3D _velocityCombined;
+        Vector3D _velocity;
+        Vector3D _lastVelocity;
         Vector3D _direction;
         Vector3D _hitPosition;
         readonly float _explosionDamage;
@@ -91,7 +92,8 @@ namespace Whiplash.ArmorPiercingProjectiles
             _direction = GetDeviatedVector(_direction, _deviationAngle);
             _origin = fireData.Origin;
             _position = _origin;
-            _velocityCombined = fireData.ShooterVelocity + _direction * _projectileSpeed;
+            _velocity = fireData.ShooterVelocity + _direction * _projectileSpeed;
+            _lastVelocity = _velocity;
         }
 
         public static Vector3 GetDeviatedVector(Vector3 direction, float deviationAngle)
@@ -111,10 +113,18 @@ namespace Whiplash.ArmorPiercingProjectiles
                 return;
             }
 
-            Vector3D gravity = MyParticlesManager.CalculateGravityInPoint(_position);
-            _velocityCombined += gravity * _tick;
+            // Update velocity due to gravity
+            Vector3D gravity = MyParticlesManager.CalculateGravityInPoint(_position); // Does this get affected by artificial grav? If so... cooooool
+            _velocity += gravity * _tick;
 
-            _position += _velocityCombined * _tick;
+            // Update direction if velocity has changed
+            if (_velocity.Equals(_lastVelocity, 1e-3))
+                _direction = Vector3D.Normalize(_velocity);
+
+            _lastVelocity = _velocity;
+
+            // Update position
+            _position += _velocity * _tick;
             var _toOrigin = _position - _origin;
 
             //draw tracer line
@@ -142,7 +152,7 @@ namespace Whiplash.ArmorPiercingProjectiles
                 return;
             }
 
-            var to = _position + 5.0 * _velocityCombined * _tick;
+            var to = _position + 5.0 * _velocity * _tick;
             var from = _position; // _positionChecked ? _position : _origin;
             _positionChecked = true;
 
@@ -448,7 +458,7 @@ namespace Whiplash.ArmorPiercingProjectiles
             // Get importand bullet parameters
             float lengthMultiplier = 40f * _tracerScale;
             lengthMultiplier *= 0.8f;
-            var thisDirection = Vector3D.Normalize(_velocityCombined);
+            var thisDirection = _direction;
             var startPoint = _position - thisDirection * lengthMultiplier;
 
             bool shouldDraw = false;
