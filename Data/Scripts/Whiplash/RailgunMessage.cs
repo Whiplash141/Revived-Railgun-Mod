@@ -79,7 +79,7 @@ namespace Whiplash.Railgun
         public long ShooterID;
 
         [ProtoMember]
-        public bool ShouldDraw;
+        public bool DrawTracer;
 
         [ProtoMember]
         public Vector4 LineColor;

@@ -189,7 +189,7 @@ namespace Whiplash.Railgun
         public float DeviationAngle;
         public Vector3 ProjectileTrailColor;
         public float ProjectileTrailScale;
-        public bool DrawTracer;
+        public bool DrawTrail;
         public bool Explode;
         public bool Penetrate;
     }
@@ -312,7 +312,7 @@ namespace Whiplash.Railgun
                     DeviationAngle = _deviationAngle,
                     ProjectileTrailColor = _trailColor,
                     ProjectileTrailScale = _trailScale,
-                    DrawTracer = true,
+                    DrawTrail = true,
                     Explode = true,
                     Penetrate = true
                 };

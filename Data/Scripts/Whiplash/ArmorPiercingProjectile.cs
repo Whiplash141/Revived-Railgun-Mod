@@ -30,6 +30,10 @@ namespace Whiplash.ArmorPiercingProjectiles
 {
     public class ArmorPiercingProjectile
     {
+        const float _tick = 1f / 60f;
+        const int _maxTracerFadeTicks = 120;
+        const double _artificialGravityMultiplier = 2;
+
         Vector3D _origin;
         Vector3D _position;
         Vector3D _velocity;
@@ -44,17 +48,15 @@ namespace Whiplash.ArmorPiercingProjectiles
         readonly float _penetrationRange;
         readonly float _penetrationDamage;
         readonly float _deviationAngle;
-        const float _tick = 1f / 60f;
         int _checkIntersectionIndex = 4;
         public bool Killed = false;
         bool _positionChecked = false;
         readonly bool _shouldExplode;
         readonly bool _shouldPenetrate;
-        readonly bool _drawTracer;
+        readonly bool _drawTrail;
         bool _targetHit = false;
         bool _penetratedObjectsSorted = false;
         bool _penetratedObjectsDamaged = false;
-        const int _maxTracerFadeTicks = 120;
         int _currentTracerFadeTicks = 0;
         readonly long _gunEntityID;
         Vector4 _lineColor;
@@ -68,13 +70,16 @@ namespace Whiplash.ArmorPiercingProjectiles
         readonly List<MyLineSegmentOverlapResult<MyVoxelBase>> _voxelOverlap = new List<MyLineSegmentOverlapResult<MyVoxelBase>>();
         Vector3D? _cachedSurfacePoint = null;
 
+        readonly List<Vector3D> _trajectoryPoints = new List<Vector3D>();
+        readonly List<RailgunTracerData> _tracerDataPoints = new List<RailgunTracerData>();
+
         public ArmorPiercingProjectile(RailgunFireData fireData, RailgunProjectileData projectileData)
         {
             //weapon data
             _tracerColor = projectileData.ProjectileTrailColor;
             _lineColor = new Vector4(_tracerColor, 1f);
             _tracerScale = projectileData.ProjectileTrailScale;
-            _drawTracer = projectileData.DrawTracer;
+            _drawTrail = projectileData.DrawTrail;
             _shouldPenetrate = projectileData.Penetrate;
             _shouldExplode = projectileData.Explode;
             _penetrationDamage = projectileData.PenetrationDamage;
@@ -94,6 +99,8 @@ namespace Whiplash.ArmorPiercingProjectiles
             _position = _origin;
             _velocity = fireData.ShooterVelocity + _direction * _projectileSpeed;
             _lastVelocity = _velocity;
+
+            _trajectoryPoints.Add(_position);
         }
 
         public static Vector3 GetDeviatedVector(Vector3 direction, float deviationAngle)
@@ -114,11 +121,13 @@ namespace Whiplash.ArmorPiercingProjectiles
             }
 
             // Update velocity due to gravity
-            Vector3D gravity = MyParticlesManager.CalculateGravityInPoint(_position); // Does this get affected by artificial grav? If so... cooooool
-            _velocity += gravity * _tick;
+            Vector3D totalGravity = MyParticlesManager.CalculateGravityInPoint(_position); // Does this get affected by artificial grav? If so... cooooool
+            Vector3D naturalGravity = RailgunCore.GetNaturalGravityAtPoint(_position);
+            Vector3D artificialGravity = totalGravity - naturalGravity;
+            _velocity += (naturalGravity + artificialGravity * _artificialGravityMultiplier) * _tick;
 
             // Update direction if velocity has changed
-            if (_velocity.Equals(_lastVelocity, 1e-3))
+            if (!_velocity.Equals(_lastVelocity, 1e-3))
                 _direction = Vector3D.Normalize(_velocity);
 
             _lastVelocity = _velocity;
@@ -128,7 +137,7 @@ namespace Whiplash.ArmorPiercingProjectiles
             var _toOrigin = _position - _origin;
 
             //draw tracer line
-            if (_drawTracer && _currentTracerFadeTicks < _maxTracerFadeTicks)
+            if (_drawTrail && _currentTracerFadeTicks < _maxTracerFadeTicks)
             {
                 _lineColor *= 0.95f;
                 _currentTracerFadeTicks++;
@@ -152,8 +161,11 @@ namespace Whiplash.ArmorPiercingProjectiles
                 return;
             }
 
+            // Add current position to trajectory list
+            _trajectoryPoints.Add(_position);
+
             var to = _position + 5.0 * _velocity * _tick;
-            var from = _position; // _positionChecked ? _position : _origin;
+            var from = _position;
             _positionChecked = true;
 
             IHitInfo hitInfo;
@@ -167,8 +179,6 @@ namespace Whiplash.ArmorPiercingProjectiles
             {
                 hit = MyAPIGateway.Physics.CastRay(from, to, out hitInfo, 0);
             }
-
-            //MyAPIGateway.Utilities.ShowNotification($"length: {Vector3D.Distance(from, to)} m", 16 * 5);
 
             if (hit)
             {
@@ -443,7 +453,7 @@ namespace Whiplash.ArmorPiercingProjectiles
                 }
             }
 
-            if (_drawTracer && _currentTracerFadeTicks < _maxTracerFadeTicks)
+            if (_drawTrail && _currentTracerFadeTicks < _maxTracerFadeTicks)
             {
                 _lineColor *= 0.95f;
                 _currentTracerFadeTicks++;
@@ -453,29 +463,57 @@ namespace Whiplash.ArmorPiercingProjectiles
             Killed = true;
         }
 
-        public RailgunTracerData GetTracerData()
+        public List<RailgunTracerData> GetTracerData()
         {
+            _tracerDataPoints.Clear();
+            RailgunTracerData tracerData;
+
+            // Draw projectile trail
+            if (_drawTrail)
+            {
+                for (int i = 0; i < _trajectoryPoints.Count - 1; i++)
+                {
+                    var start = _trajectoryPoints[i];
+                    var end = _trajectoryPoints[i + 1];
+
+                    tracerData = new RailgunTracerData()
+                    {
+                        ShooterID = _gunEntityID,
+                        DrawTracer = false,
+                        LineColor = _lineColor,
+                        LineFrom = start,
+                        LineTo = end,
+                        ProjectileDirection = Vector3D.Zero,
+                    };
+
+                    _tracerDataPoints.Add(tracerData);
+                }
+            }
+
+            var trailStart = _trajectoryPoints[_tracerDataPoints.Count - 1];
+
             // Get importand bullet parameters
             float lengthMultiplier = 40f * _tracerScale;
             lengthMultiplier *= 0.8f;
-            var thisDirection = _direction;
-            var startPoint = _position - thisDirection * lengthMultiplier;
+            var startPoint = _position - _direction * lengthMultiplier;
 
             bool shouldDraw = false;
             if (lengthMultiplier > 0f && !_targetHit && Vector3D.DistanceSquared(_position, _origin) > lengthMultiplier * lengthMultiplier && !Killed)
                 shouldDraw = true;
 
-            var tracerData = new RailgunTracerData()
+            tracerData = new RailgunTracerData()
             {
                 ShooterID = _gunEntityID,
-                ShouldDraw = shouldDraw,
+                DrawTracer = shouldDraw,
                 LineColor = _lineColor,
-                LineFrom = _origin,
+                LineFrom = trailStart,
                 LineTo = _targetHit ? _hitPosition : _position,
-                ProjectileDirection = thisDirection,
+                ProjectileDirection = _direction,
             };
 
-            return tracerData;
+            _tracerDataPoints.Add(tracerData);
+
+            return _tracerDataPoints;
         }
 
         public struct PenetratedEntityContainer

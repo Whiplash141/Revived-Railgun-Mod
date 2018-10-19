@@ -30,7 +30,7 @@ namespace Whiplash.ArmorPiercingProjectiles
 {
     public class ArmorPiercingProjectileClient
     {
-        readonly bool _drawTracer;
+        readonly bool _drawTrail;
         Vector4 _lineColor;
         readonly MyStringId _material = MyStringId.GetOrCompute("WeaponLaser");
         readonly MyStringId _bulletMaterial = MyStringId.GetOrCompute("ProjectileTrailLine");
@@ -38,22 +38,22 @@ namespace Whiplash.ArmorPiercingProjectiles
         readonly float _tracerScale;
         readonly Vector3D _from;
         readonly Vector3D _to;
-        readonly Vector3D _projectileVelocity;
-        readonly bool _shouldDraw;
+        readonly Vector3D _direction;
+        readonly bool _drawTracer;
 
         public ArmorPiercingProjectileClient(RailgunTracerData tracerData, RailgunProjectileData projectileData)
         {
             //weapon data
             _tracerColor = projectileData.ProjectileTrailColor;
             _tracerScale = projectileData.ProjectileTrailScale;
-            _drawTracer = projectileData.DrawTracer;
+            _drawTrail = projectileData.DrawTrail;
 
             //tracer data
             _lineColor = tracerData.LineColor;
             _from = tracerData.LineFrom;
             _to = tracerData.LineTo;
-            _projectileVelocity = tracerData.ProjectileDirection;
-            _shouldDraw = tracerData.ShouldDraw;
+            _direction = tracerData.ProjectileDirection;
+            _drawTracer = tracerData.DrawTracer;
         }
 
         public void DrawTracer()
@@ -62,21 +62,21 @@ namespace Whiplash.ArmorPiercingProjectiles
                 return;
 
             // Draw tracer
-            if (_shouldDraw)
+            if (_drawTracer)
             {
                 float scaleFactor = MyParticlesManager.Paused ? 1f : MyUtils.GetRandomFloat(1f, 2f);
                 float lengthMultiplier = 40f * _tracerScale;
-                lengthMultiplier *= MyParticlesManager.Paused ? 0.6f : MyUtils.GetRandomFloat(0.6f, 0.8f);
-                var thisDirection = Vector3D.Normalize(_projectileVelocity);
-                var startPoint = _to - thisDirection * lengthMultiplier;
+                lengthMultiplier *= /*MyParticlesManager.Paused*/ true ? 0.6f : MyUtils.GetRandomFloat(0.6f, 0.8f);
+                var startPoint = _to - _direction * lengthMultiplier;
                 float thickness = (MyParticlesManager.Paused ? 0.2f : MyUtils.GetRandomFloat(0.2f, 0.3f)) * _tracerScale;
                 thickness *= MathHelper.Lerp(0.2f, 0.8f, 1f);
 
-                MyTransparentGeometry.AddLineBillboard(_bulletMaterial, new Vector4(_tracerColor * scaleFactor * 10f, 1f), startPoint, thisDirection, lengthMultiplier, thickness);
+                MyTransparentGeometry.AddLineBillboard(_bulletMaterial, new Vector4(_tracerColor * scaleFactor * 10f, 1f), startPoint, _direction, lengthMultiplier, thickness);
             }
 
-            // Draw tracer line
-            MySimpleObjectDraw.DrawLine(_from, _to, _material, ref _lineColor, _tracerScale * 0.1f);
+            // Draw bullet trail
+            if (_drawTrail)
+                MySimpleObjectDraw.DrawLine(_from, _to, _material, ref _lineColor, _tracerScale * 0.1f);
         }
     }
 }

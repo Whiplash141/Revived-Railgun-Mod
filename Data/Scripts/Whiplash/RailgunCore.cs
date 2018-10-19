@@ -11,6 +11,8 @@ using Rexxar;
 using Rexxar.Communication;
 using Whiplash.ArmorPiercingProjectiles;
 using VRage.ModAPI;
+using Sandbox.Game.Entities;
+using VRageMath;
 
 namespace Whiplash.Railgun
 {
@@ -22,6 +24,7 @@ namespace Whiplash.Railgun
         private int _count;
         static List<ArmorPiercingProjectile> liveProjectiles = new List<ArmorPiercingProjectile>();
         static Dictionary<long, RailgunProjectileData> railgunDataDict = new Dictionary<long, RailgunProjectileData>();
+        static HashSet<MyPlanet> _planets = new HashSet<MyPlanet>();
 
         public static int CountRegisteredRailguns()
         {
@@ -60,7 +63,11 @@ namespace Whiplash.Railgun
                     liveProjectiles.RemoveAt(i);
 
                 var tracerData = projectile.GetTracerData();
-                RailgunMessage.SendToClients(tracerData);
+
+                foreach (var tracer in tracerData)
+                {
+                    RailgunMessage.SendToClients(tracer);
+                }
             }
         }
 
@@ -108,10 +115,47 @@ namespace Whiplash.Railgun
             Communication.Register();
         }
 
+        private void AddPlanet(IMyEntity entity)
+        {
+            var planet = entity as MyPlanet;
+            if (planet != null)
+                _planets.Add(planet);
+        }
+
+        private void RemovePlanet(IMyEntity entity)
+        {
+            var planet = entity as MyPlanet;
+            if (planet != null)
+                _planets.Remove(planet);
+        }
+
+        public static Vector3D GetNaturalGravityAtPoint(Vector3D point)
+        {
+            var gravity = Vector3D.Zero;
+            foreach (var planet in _planets)
+            {
+                IMyGravityProvider gravityProvider = planet.Components.Get<MyGravityProviderComponent>();
+                if (gravityProvider != null)
+                    gravity += gravityProvider.GetWorldGravity(point);
+            }
+            return gravity;
+        }
+
+        public override void LoadData()
+        {
+            MyAPIGateway.Entities.OnEntityAdd += AddPlanet;
+            MyAPIGateway.Entities.OnEntityRemove += RemovePlanet;
+
+            base.LoadData();
+        }
+
+
         protected override void UnloadData()
         {
             base.UnloadData();
             Communication.Unregister();
+            MyAPIGateway.Entities.OnEntityAdd -= AddPlanet;
+            MyAPIGateway.Entities.OnEntityRemove -= RemovePlanet;
         }
     }
 }
