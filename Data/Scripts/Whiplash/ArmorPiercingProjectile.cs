@@ -31,8 +31,9 @@ namespace Whiplash.ArmorPiercingProjectiles
     public class ArmorPiercingProjectile
     {
         const float _tick = 1f / 60f;
-        const int _maxTracerFadeTicks = 120;
+        const int _maxTracerFadeTicks = 180;
         const double _artificialGravityMultiplier = 2;
+        const float _trailColorDecayRatio = 0.97f;
 
         Vector3D _origin;
         Vector3D _position;
@@ -139,7 +140,7 @@ namespace Whiplash.ArmorPiercingProjectiles
             //draw tracer line
             if (_drawTrail && _currentTracerFadeTicks < _maxTracerFadeTicks)
             {
-                _lineColor *= 0.95f;
+                _lineColor *= _trailColorDecayRatio;
                 _currentTracerFadeTicks++;
             }
 
@@ -455,7 +456,7 @@ namespace Whiplash.ArmorPiercingProjectiles
 
             if (_drawTrail && _currentTracerFadeTicks < _maxTracerFadeTicks)
             {
-                _lineColor *= 0.95f;
+                _lineColor *= _trailColorDecayRatio;
                 _currentTracerFadeTicks++;
                 return;
             }
