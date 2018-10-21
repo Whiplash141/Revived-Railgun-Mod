@@ -36,6 +36,7 @@ namespace Whiplash.ArmorPiercingProjectiles
         const float _trailColorDecayRatio = 0.97f;
 
         Vector3D _origin;
+        Vector3D _lastPositionChecked;
         Vector3D _position;
         Vector3D _velocity;
         Vector3D _lastVelocity;
@@ -100,6 +101,7 @@ namespace Whiplash.ArmorPiercingProjectiles
             _position = _origin;
             _velocity = fireData.ShooterVelocity + _direction * _projectileSpeed;
             _lastVelocity = _velocity;
+            _lastPositionChecked = _origin;
 
             _trajectoryPoints.Add(_position);
         }
@@ -165,9 +167,10 @@ namespace Whiplash.ArmorPiercingProjectiles
             // Add current position to trajectory list
             _trajectoryPoints.Add(_position);
 
-            var to = _position + 5.0 * _velocity * _tick;
-            var from = _position;
+            var to = _position; //_position + 5.0 * _velocity * _tick;
+            var from = _lastPositionChecked;
             _positionChecked = true;
+            _lastPositionChecked = _position;
 
             IHitInfo hitInfo;
             bool hit = false;
