@@ -14,7 +14,7 @@
       </BasicProperties>
       <ProjectileProperties>
         <ProjectileHitImpulse>225000</ProjectileHitImpulse>
-        <ProjectileMassDamage>0.25</ProjectileMassDamage> <!--Penertation damage: This is multiplied by 100,000 in the script. So 0.2 => 20,000 penetration damage-->
+        <ProjectileMassDamage>0</ProjectileMassDamage> <!--Set this to zero. To set penetration damage, use the configuration file in AppData/Roaming/SpaceEngineers/Storage/<This Mod Folder>/RailgunConfig.sbc-->
         <ProjectileHealthDamage>1000</ProjectileHealthDamage>
         <ProjectileTrailScale>5</ProjectileTrailScale>
         <ProjectileTrailColor x="0.0" y="0.5" z="1.0" />

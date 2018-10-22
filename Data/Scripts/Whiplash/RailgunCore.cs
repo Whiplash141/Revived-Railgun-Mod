@@ -13,30 +13,54 @@ using Whiplash.ArmorPiercingProjectiles;
 using VRage.ModAPI;
 using Sandbox.Game.Entities;
 using VRageMath;
+using VRage.Utils;
 
 namespace Whiplash.Railgun
 {
     [MySessionComponentDescriptor(MyUpdateOrder.AfterSimulation | MyUpdateOrder.BeforeSimulation)]
     public class RailgunCore : MySessionComponentBase
     {
+        #region Member Fields
+        const string _configurationFileName = "RailgunConfig.sbc";
+
+        public static RailgunConfig MyConfig { get; private set; } = new RailgunConfig()
+        {
+            VersionNumber = 1,
+            ArtificialGravityMultiplier = 2,
+            NaturalGravityMultiplier = 1,
+            DrawProjectileTrails = true,
+            PenetrationDamage = 33000,
+            ExplosionRadius = 0f,
+            ExplosionDamage = 0f,
+            ShouldExplode = true,
+            ShouldPenetrate = true,
+            PenetrationRange = 100f,
+        };
+
         public static bool IsServer;
-        private static bool _init;
+        public static bool SessionInit { get; private set; } = false;
         private int _count;
         static List<ArmorPiercingProjectile> liveProjectiles = new List<ArmorPiercingProjectile>();
         static Dictionary<long, RailgunProjectileData> railgunDataDict = new Dictionary<long, RailgunProjectileData>();
         static HashSet<MyPlanet> _planets = new HashSet<MyPlanet>();
+        #endregion
 
-        public static int CountRegisteredRailguns()
+        #region Update and Init
+        private void Initialize()
         {
-            return railgunDataDict.Count;
+            IsServer = MyAPIGateway.Multiplayer.IsServer || MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE;
+            Communication.Register();
+
+            if (IsServer)
+                LoadConfig();
         }
 
         public override void UpdateAfterSimulation()
         {
-            if (!_init)
+            if (!SessionInit)
             {
-                _init = true;
                 Initialize();
+                SessionInit = true;
             }
 
             if (++_count % 10 == 0)
@@ -47,10 +71,10 @@ namespace Whiplash.Railgun
         {
             if (MyAPIGateway.Multiplayer.IsServer)
                 SimulateProjectiles();
-
-            //MyAPIGateway.Utilities.ShowNotification($"projectiles: {liveProjectiles.Count}", 16);
         }
+        #endregion
 
+        #region Projectile Methods
         private static void SimulateProjectiles()
         {
             //projectile simulation
@@ -97,7 +121,9 @@ namespace Whiplash.Railgun
         {
             liveProjectiles.Add(projectile);
         }
+        #endregion
 
+        #region Railgun Register
         public static void RegisterRailgun(long entityID, RailgunProjectileData data)
         {
             railgunDataDict[entityID] = data;
@@ -108,13 +134,9 @@ namespace Whiplash.Railgun
             if (railgunDataDict.ContainsKey(entityID))
                 railgunDataDict.Remove(entityID);
         }
+        #endregion
 
-        private void Initialize()
-        {
-            IsServer = MyAPIGateway.Multiplayer.IsServer || MyAPIGateway.Session.OnlineMode == MyOnlineModeEnum.OFFLINE;
-            Communication.Register();
-        }
-
+        #region Planets and Gravity
         private void AddPlanet(IMyEntity entity)
         {
             var planet = entity as MyPlanet;
@@ -140,7 +162,9 @@ namespace Whiplash.Railgun
             }
             return gravity;
         }
+        #endregion
 
+        #region Load and Unload Data
         public override void LoadData()
         {
             MyAPIGateway.Entities.OnEntityAdd += AddPlanet;
@@ -149,7 +173,6 @@ namespace Whiplash.Railgun
             base.LoadData();
         }
 
-
         protected override void UnloadData()
         {
             base.UnloadData();
@@ -157,5 +180,72 @@ namespace Whiplash.Railgun
             MyAPIGateway.Entities.OnEntityAdd -= AddPlanet;
             MyAPIGateway.Entities.OnEntityRemove -= RemovePlanet;
         }
+        #endregion
+
+        #region Config Save and Load
+        private static void SaveConfig(RailgunConfig config)
+        {
+            using (var Writer = MyAPIGateway.Utilities.WriteFileInLocalStorage(_configurationFileName, typeof(RailgunCore)))
+                Writer.Write(MyAPIGateway.Utilities.SerializeToXML(config));
+            MyAPIGateway.Utilities.ShowNotification($"{_configurationFileName} saved to 'AppData\\Roaming\\SpaceEngineers\\Storage'", 10000, "Green");
+        }
+
+        private void LoadConfig()
+        {
+            try
+            {
+                if (!MyAPIGateway.Utilities.FileExistsInLocalStorage(_configurationFileName, typeof(RailgunCore)))
+                {
+                    SaveConfig(MyConfig);
+                }
+                else
+                {
+                    bool refresh = false;
+                    using (var Reader = MyAPIGateway.Utilities.ReadFileInLocalStorage(_configurationFileName, typeof(RailgunCore)))
+                    {
+                        string settings = Reader.ReadToEnd();
+                        var config = MyAPIGateway.Utilities.SerializeFromXML<RailgunConfig>(settings);
+
+                        if (config.VersionNumber < MyConfig.VersionNumber)
+                        {
+                            refresh = true;
+                        }
+                        else
+                        {
+                            MyConfig = config;
+                        }
+                    }
+
+                    if (refresh)
+                    {
+                        MyAPIGateway.Utilities.ShowNotification($"{_configurationFileName} out of date. Overwriting...", 10000, "Green");
+                        MyAPIGateway.Utilities.DeleteFileInLocalStorage(_configurationFileName, typeof(RailgunCore));
+                        SaveConfig(MyConfig);
+                    }
+                    else
+                        MyAPIGateway.Utilities.ShowNotification($"{_configurationFileName} loaded from 'AppData\\Roaming\\SpaceEngineers\\Storage'", 10000, "Green");
+                }
+            }
+            catch (Exception e)
+            {
+                MyAPIGateway.Utilities.ShowNotification("Exception in config load", 10000, "Red");
+                MyLog.Default.WriteLine(e);
+            }
+        }
+
+        public struct RailgunConfig
+        {
+            public int VersionNumber;
+            public float ArtificialGravityMultiplier;
+            public float NaturalGravityMultiplier;
+            public bool DrawProjectileTrails;
+            public bool ShouldExplode;
+            public float ExplosionRadius;
+            public float ExplosionDamage;
+            public bool ShouldPenetrate;
+            public float PenetrationDamage;
+            public float PenetrationRange;
+        }
+        #endregion
     }
 }
