@@ -46,7 +46,6 @@ namespace Whiplash.ArmorPiercingProjectiles
             //weapon data
             _tracerColor = projectileData.ProjectileTrailColor;
             _tracerScale = projectileData.ProjectileTrailScale;
-            _drawTrail = projectileData.DrawTrail;
 
             //tracer data
             _lineColor = tracerData.LineColor;
@@ -54,6 +53,7 @@ namespace Whiplash.ArmorPiercingProjectiles
             _to = tracerData.LineTo;
             _direction = tracerData.ProjectileDirection;
             _drawTracer = tracerData.DrawTracer;
+            _drawTrail = tracerData.DrawTrail;
         }
 
         public void DrawTracer()

@@ -182,16 +182,9 @@ namespace Whiplash.Railgun
         public long ShooterID;
         public float DesiredSpeed;
         public float MaxTrajectory;
-        public float ExplosionDamage;
-        public float ExplosionRadius;
-        public float PenetrationDamage;
-        public float PenetrationRange;
         public float DeviationAngle;
         public Vector3 ProjectileTrailColor;
         public float ProjectileTrailScale;
-        public bool DrawTrail;
-        public bool Explode;
-        public bool Penetrate;
     }
 
     public struct RailgunFireData
@@ -204,6 +197,7 @@ namespace Whiplash.Railgun
 
     public class Railgun : MyGameLogicComponent
     {
+        #region Member Fields
         IMyFunctionalBlock block;
         IMyCubeBlock cube;
         IMyLargeTurretBase turret;
@@ -212,7 +206,6 @@ namespace Whiplash.Railgun
         DateTime _currentShootTime;
         float _maxTrajectory;
         float _desiredSpeed;
-        float _projectileDamage;
         float _turretMaxRange;
         float _backkickForce;
         float _deviationAngle;
@@ -233,14 +226,13 @@ namespace Whiplash.Railgun
         MyResourceSinkComponent sink;
         //public bool Recharge = true;
         MyObjectBuilder_EntityBase _objectBuilder;
-
         readonly MySoundPair shootSound = new MySoundPair("WepShipLargeRailgunShotLZM");
         MyEntity3DSoundEmitter soundEmitter;
-
         RailgunProjectileData projectileData;
-
         public bool _settingsDirty;
+        #endregion
 
+        #region Terminal Action/Property Methods
         public void GetWriter(IMyTerminalBlock x, StringBuilder s)
         {
             s.Clear();
@@ -275,6 +267,7 @@ namespace Whiplash.Railgun
             if (g != null)
                 g._settingsDirty = true;
         }
+        #endregion
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
@@ -305,16 +298,9 @@ namespace Whiplash.Railgun
                     ShooterID = Entity.EntityId,
                     DesiredSpeed = _desiredSpeed,
                     MaxTrajectory = _maxTrajectory,
-                    ExplosionDamage = 0f,
-                    ExplosionRadius = 0f,
-                    PenetrationDamage = _projectileDamage,
-                    PenetrationRange = 50f,
                     DeviationAngle = _deviationAngle,
                     ProjectileTrailColor = _trailColor,
                     ProjectileTrailScale = _trailScale,
-                    DrawTrail = true,
-                    Explode = true,
-                    Penetrate = true
                 };
 
                 RailgunCore.RegisterRailgun(projectileData.ShooterID, projectileData);
@@ -386,7 +372,7 @@ namespace Whiplash.Railgun
                             ShooterVelocity = velocity,
                             Origin = origin,
                             Direction = direction,
-                            ShooterID = Entity.EntityId
+                            ShooterID = Entity.EntityId,
                         };
 
                         RailgunCore.ShootProjectileServer(fireData);
@@ -429,7 +415,7 @@ namespace Whiplash.Railgun
 
                 _maxTrajectory = ammo.MaxTrajectory;
                 _desiredSpeed = ammo.DesiredSpeed;
-                _projectileDamage = ammo.GetDamageForMechanicalObjects() * 1e5f;
+                // _projectileDamage = ammo.GetDamageForMechanicalObjects() * 1e5f;
                 _backkickForce = ammo.BackkickForce;
 
                 var projectileAmmo = ammo as MyProjectileAmmoDefinition;
