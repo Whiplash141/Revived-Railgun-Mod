@@ -275,7 +275,7 @@ namespace Whiplash.Railgun
             try
             {
                 _objectBuilder = objectBuilder;
-                NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.BEFORE_NEXT_FRAME;
+                NeedsUpdate = MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME;
                 // this.m_missileAmmoDefinition = weaponProperties.GetCurrentAmmoDefinitionAs<MyMissileAmmoDefinition>();
 
                 SetPowerSink();
