@@ -131,7 +131,6 @@
     <Compile Include="Railgun\Railgun.cs" />
     <Compile Include="Railgun\RailgunCore.cs" />
     <Compile Include="Railgun\RailgunMessage.cs" />
-    <Compile Include="Railgun\RaycastShortcuts.cs" />
     <Compile Include="Railgun\Settings.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
