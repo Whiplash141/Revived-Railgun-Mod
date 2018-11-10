@@ -127,8 +127,8 @@
     <Compile Include="Railgun\Communication\Communication.cs" />
     <Compile Include="Railgun\Communication\Message.cs" />
     <Compile Include="Railgun\Communication\SettingsMessage.cs" />
-    <Compile Include="Railgun\Properties\AssemblyInfo.cs" />
     <Compile Include="Railgun\Railgun.cs" />
+    <Compile Include="Railgun\RailgunConfig.cs" />
     <Compile Include="Railgun\RailgunCore.cs" />
     <Compile Include="Railgun\RailgunMessage.cs" />
     <Compile Include="Railgun\Settings.cs" />

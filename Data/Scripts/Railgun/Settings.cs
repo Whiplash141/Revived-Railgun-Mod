@@ -45,7 +45,7 @@ namespace Rexxar
                 catch (Exception ex)
                 {
                     MyLog.Default.WriteLine("RailgunSettings failed to deserialize");
-                    throw;
+                    MyLog.Default.WriteLine(ex);
                 }
                 _readCache[entity.EntityId] = set;
                 return set;

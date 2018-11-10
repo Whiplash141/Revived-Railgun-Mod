@@ -22,21 +22,6 @@ namespace Whiplash.Railgun
     {
         #region Member Fields
         const string _configurationFileName = "RailgunConfig.sbc";
-
-        public static RailgunConfig MyConfig { get; private set; } = new RailgunConfig()
-        {
-            VersionNumber = 1,
-            ArtificialGravityMultiplier = 2,
-            NaturalGravityMultiplier = 1,
-            DrawProjectileTrails = true,
-            PenetrationDamage = 33000,
-            ExplosionRadius = 0f,
-            ExplosionDamage = 0f,
-            ShouldExplode = true,
-            ShouldPenetrate = true,
-            PenetrationRange = 100f,
-        };
-
         public static bool IsServer;
         public static bool SessionInit { get; private set; } = false;
         private int _count;
@@ -196,7 +181,7 @@ namespace Whiplash.Railgun
             {
                 if (!MyAPIGateway.Utilities.FileExistsInLocalStorage(_configurationFileName, typeof(RailgunCore)))
                 {
-                    SaveConfig(MyConfig);
+                    SaveConfig(RailgunConfig.Default);
                 }
                 else
                 {
@@ -206,13 +191,13 @@ namespace Whiplash.Railgun
                         string settings = Reader.ReadToEnd();
                         var config = MyAPIGateway.Utilities.SerializeFromXML<RailgunConfig>(settings);
 
-                        if (config.VersionNumber < MyConfig.VersionNumber)
+                        if (config.VersionNumber < RailgunConfig.Default.VersionNumber)
                         {
                             refresh = true;
                         }
                         else
                         {
-                            MyConfig = config;
+                            RailgunConfig.Default = config;
                         }
                     }
 
@@ -220,7 +205,7 @@ namespace Whiplash.Railgun
                     {
                         MyAPIGateway.Utilities.ShowNotification($"{_configurationFileName} out of date. Overwriting...", 10000, "Green");
                         MyAPIGateway.Utilities.DeleteFileInLocalStorage(_configurationFileName, typeof(RailgunCore));
-                        SaveConfig(MyConfig);
+                        SaveConfig(RailgunConfig.Default);
                     }
                     else
                         MyAPIGateway.Utilities.ShowNotification($"{_configurationFileName} loaded from 'AppData\\Roaming\\SpaceEngineers\\Storage'", 10000, "Green");
@@ -233,19 +218,7 @@ namespace Whiplash.Railgun
             }
         }
 
-        public struct RailgunConfig
-        {
-            public int VersionNumber;
-            public float ArtificialGravityMultiplier;
-            public float NaturalGravityMultiplier;
-            public bool DrawProjectileTrails;
-            public bool ShouldExplode;
-            public float ExplosionRadius;
-            public float ExplosionDamage;
-            public bool ShouldPenetrate;
-            public float PenetrationDamage;
-            public float PenetrationRange;
-        }
+        
         #endregion
     }
 }

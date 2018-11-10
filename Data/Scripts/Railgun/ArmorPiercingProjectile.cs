@@ -87,13 +87,13 @@ namespace Whiplash.ArmorPiercingProjectiles
             _gunEntityID = projectileData.ShooterID;
 
             // Config data
-            _drawTrail = RailgunCore.MyConfig.DrawProjectileTrails;
-            _explosionDamage = RailgunCore.MyConfig.ExplosionDamage;
-            _explosionRadius = RailgunCore.MyConfig.ExplosionRadius;
-            _penetrationDamage = RailgunCore.MyConfig.PenetrationDamage;
-            _penetrationRange = RailgunCore.MyConfig.PenetrationRange;
-            _shouldExplode = RailgunCore.MyConfig.ShouldExplode;
-            _shouldPenetrate = RailgunCore.MyConfig.ShouldPenetrate;
+            _drawTrail = RailgunConfig.Default.DrawProjectileTrails;
+            _explosionDamage = RailgunConfig.Default.ExplosionDamage;
+            _explosionRadius = RailgunConfig.Default.ExplosionRadius;
+            _penetrationDamage = RailgunConfig.Default.PenetrationDamage;
+            _penetrationRange = RailgunConfig.Default.PenetrationRange;
+            _shouldExplode = RailgunConfig.Default.ShouldExplode;
+            _shouldPenetrate = RailgunConfig.Default.ShouldPenetrate;
 
             // Fire data
             var temp = fireData.Direction;
@@ -129,7 +129,7 @@ namespace Whiplash.ArmorPiercingProjectiles
             Vector3D totalGravity = MyParticlesManager.CalculateGravityInPoint(_position); // Does this get affected by artificial grav? If so... cooooool
             Vector3D naturalGravity = RailgunCore.GetNaturalGravityAtPoint(_position);
             Vector3D artificialGravity = totalGravity - naturalGravity;
-            _velocity += (naturalGravity * RailgunCore.MyConfig.NaturalGravityMultiplier + artificialGravity * RailgunCore.MyConfig.ArtificialGravityMultiplier) * _tick;
+            _velocity += (naturalGravity * RailgunConfig.Default.NaturalGravityMultiplier + artificialGravity * RailgunConfig.Default.ArtificialGravityMultiplier) * _tick;
 
             // Update direction if velocity has changed
             if (!_velocity.Equals(_lastVelocity, 1e-3))

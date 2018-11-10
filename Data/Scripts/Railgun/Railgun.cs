@@ -216,9 +216,9 @@ namespace Whiplash.Railgun
         bool _isReloading = false;
         bool _enabledStatus = true;
         bool _firstUpdate = true;
-        const float _idlePowerDrawBase = 2f; //MW
-        const float _idlePowerDrawMax = 20f; //MW
-        const float _reloadPowerDraw = 200f; //MW
+        readonly float _idlePowerDrawBase = RailgunConfig.Default.IdlePowerDrawFixed; //MW
+        readonly float _idlePowerDrawMax = RailgunConfig.Default.IdlePowerDrawTurret; //MW
+        readonly float _reloadPowerDraw = RailgunConfig.Default.ReloadPowerDraw; //MW
         float _powerDrawDecrementPerTick;
         private static readonly MyDefinitionId resourceId = MyResourceDistributorComponent.ElectricityId;
         Vector3 _trailColor;
