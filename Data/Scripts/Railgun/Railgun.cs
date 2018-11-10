@@ -319,18 +319,10 @@ namespace Whiplash.Railgun
             RailgunCore.UnregisterRailgun(Entity.EntityId);
         }
 
-        public override void UpdateOnceBeforeFrame()
+        public override void UpdateBeforeSimulation10()
         {
-            base.UpdateOnceBeforeFrame();
-            try
-            {
-                //GetTurretMaxRange();
-            }
-            catch (Exception e)
-            {
-                MyAPIGateway.Utilities.ShowNotification("Exception in update once", 10000, MyFontEnum.Red);
-                MyLog.Default.WriteLine(e);
-            }
+            base.UpdateBeforeSimulation10();
+            sink.Update();
         }
 
         public override void UpdateBeforeSimulation()
@@ -389,7 +381,6 @@ namespace Whiplash.Railgun
 
                 _lastShootTime = _currentShootTime;
                 _firstUpdate = false;
-                sink.Update();
                 ShowReloadMessage();
             }
             catch (Exception e)
@@ -451,13 +442,14 @@ namespace Whiplash.Railgun
         void SetPowerSink()
         {
             sink = Entity.Components.Get<MyResourceSinkComponent>();
-            sink.SetRequiredInputFuncByType(resourceId, () => GetPowerInput());
+
             MyResourceSinkInfo resourceInfo = new MyResourceSinkInfo()
             {
                 ResourceTypeId = resourceId,
                 MaxRequiredInput = turret == null ? _idlePowerDrawBase : _idlePowerDrawMax,
                 RequiredInputFunc = () => GetPowerInput()
             };
+
             sink.RemoveType(ref resourceInfo.ResourceTypeId);
             sink.Init(MyStringHash.GetOrCompute("Thrust"), resourceInfo);
             sink.AddType(ref resourceInfo);
@@ -465,8 +457,6 @@ namespace Whiplash.Railgun
 
         float GetPowerInput(bool count = true)
         {
-            //if (block.Enabled == false)
-            //return 0f;
             var s = Settings.GetSettings(Entity);
 
             if (!block.Enabled && (!s.Recharging || !_isReloading))
