@@ -6,8 +6,17 @@
         <TypeId>SmallMissileLauncher</TypeId>
         <SubtypeId>LargeRailGunLZM</SubtypeId>
       </Id>
-      <DisplayName>Large Ship Railgun</DisplayName>
+      <DisplayName>Railgun</DisplayName>
       <Icon>Textures\GUI\Icons\Railgun.dds</Icon>
+      <Description>Railguns deliver immense penetration damage over very long ranges. However, this deadly precision comes with a high resource cost.
+
+Requires 50mm NiFe-DU Slugs.</Description>
+      <BlockVariants>
+        <BlockVariant>
+          <TypeId>LargeGatlingTurret</TypeId>
+          <SubtypeId>LargeRailgunTurretLZM</SubtypeId>
+        </BlockVariant>
+      </BlockVariants>
       <CubeSize>Large</CubeSize>
       <BlockTopology>TriangleMesh</BlockTopology>
       <Size>
@@ -33,17 +42,12 @@
       </Components>
       <CriticalComponent Subtype="Computer" Index="0" />
       <MountPoints>
-        
         <MountPoint Side="Top" StartX="0" StartY="0" EndX="1" EndY="1" />
 		<MountPoint Side="Bottom" StartX="0" StartY="5" EndX="1" EndY="6" />
-		
 		<MountPoint Side="Right" StartX="0" StartY="0" EndX="1" EndY="1" />
 		<MountPoint Side="Left" StartX="5" StartY="0" EndX="6" EndY="1" />
-		
 		<MountPoint Side="Back" StartX="0" StartY="0" EndX="1" EndY="1" />
-		
       </MountPoints>
-      
       <BuildProgressModels>
         <Model BuildPercentUpperBound="0.33" File="Models\Weapons\railgun_stage1.mwm" />
         <Model BuildPercentUpperBound="0.66" File="Models\Weapons\railgun_stage2.mwm" />
@@ -52,12 +56,10 @@
       <BlockPairName>LargeRailgunLZM</BlockPairName>
       <WeaponDefinitionId Subtype="LargeShipRailgunLZM" />
 	  <InventoryMaxVolume>0.32</InventoryMaxVolume>
-	  
 	  <DamageEffectId>214</DamageEffectId>
 	  <ExcludedAreaForCamera>10</ExcludedAreaForCamera>
 	  <BuildTimeSeconds>60</BuildTimeSeconds>
 	  <PhysicsOption>Convex</PhysicsOption>
-	  
     </Definition>
 	
 	<Definition xsi:type="MyObjectBuilder_LargeTurretBaseDefinition">
@@ -65,8 +67,11 @@
         <TypeId>LargeGatlingTurret</TypeId>
         <SubtypeId>LargeRailgunTurretLZM</SubtypeId>
       </Id>
-      <DisplayName>Large Ship Railgun Turret</DisplayName>
+      <DisplayName>Railgun Turret</DisplayName>
       <Icon>Textures\GUI\Icons\railgun_turret.dds</Icon>
+      <Description>Railguns deliver immense penetration damage over very long ranges. However, this deadly precision comes with a high resource cost.
+
+Requires 50mm NiFe-DU Slugs.</Description>
       <CubeSize>Large</CubeSize>
       <BlockTopology>TriangleMesh</BlockTopology>
       <Size x="7" y="3" z="7" />
@@ -84,15 +89,10 @@
         <Component Subtype="Construction" Count="25" />
         <Component Subtype="SteelPlate" Count="100" />
       </Components>
-      <CriticalComponent Subtype="Computer" Index="0" />
-	  
+      <CriticalComponent Subtype="Computer" Index="0" />	  
       <MountPoints>
-	  
-        <MountPoint Side="Bottom" StartX="3" StartY="2" EndX="4" EndY="5" />
-
-		
-      </MountPoints>
-	  
+        <MountPoint Side="Bottom" StartX="3" StartY="2" EndX="4" EndY="5" />		
+      </MountPoints>	  
 	   <BuildProgressModels>
         <Model BuildPercentUpperBound="0.33" File="Models\Weapons\heavyturret_stage1.mwm" />
         <Model BuildPercentUpperBound="0.66" File="Models\Weapons\heavyturret_stage2.mwm" />

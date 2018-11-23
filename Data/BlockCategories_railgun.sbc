@@ -19,11 +19,12 @@
                 <TypeId>GuiBlockCategoryDefinition</TypeId>
                 <SubtypeId/>
             </Id>
-            <DisplayName>DisplayName_Category_ShipWeaponsTools</DisplayName>
-            <Name>ShipWeaponsTools</Name>
+            <DisplayName>DisplayName_Category_ShipWeapons</DisplayName>
+            <Name>ShipWeapons</Name>
             <SearchBlocks>false</SearchBlocks>
             <IsShipCategory>true</IsShipCategory>
             <IsBlockCategory>false</IsBlockCategory>
+            <IsToolCategory>true</IsToolCategory>
             <ItemIds>
                 <string>SmallMissileLauncher/LargeRailGunLZM</string>
                 <!--<string>LargeGatlingTurret/LargeRailgunTurretLZM</string>-->
@@ -31,21 +32,19 @@
             </ItemIds>
         </Category>  
         
+
         <Category xsi:type="MyObjectBuilder_GuiBlockCategoryDefinition">
             <Id>
                 <TypeId>GuiBlockCategoryDefinition</TypeId>
                 <SubtypeId/>
             </Id>
-            <DisplayName>DisplayName_Category_ShipWeaponsTools</DisplayName>
-            <Name>WeaponsTools</Name>
-            <SearchBlocks>false</SearchBlocks>
-            <IsShipCategory>true</IsShipCategory>
-            <IsBlockCategory>false</IsBlockCategory>
+            <DisplayName>DisplayName_Category_ShipWeapons</DisplayName>
+            <Name>Weapons</Name>
             <ItemIds>
                 <string>SmallMissileLauncher/LargeRailGunLZM</string>
-                <string>LargeGatlingTurret/LargeRailgunTurretLZM</string> 
+                <!--<string>LargeGatlingTurret/LargeRailgunTurretLZM</string>--> 
             </ItemIds>
         </Category>
-        
+
     </CategoryClasses>
 </Definitions>
