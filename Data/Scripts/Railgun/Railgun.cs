@@ -470,7 +470,7 @@ namespace Whiplash.Railgun
                 return requiredInput;
             }
 
-            _ticksSinceLastReload++;
+            _ticksSinceLastReload += 10;
             if (_ticksSinceLastReload > _reloadTicks)
                 block.Enabled = false;
             else
@@ -486,9 +486,9 @@ namespace Whiplash.Railgun
             {
                 var suppliedRatio = sink.SuppliedRatioByType(resourceId);
                 if (suppliedRatio == 1)
-                    _currentReloadTicks += 1;
+                    _currentReloadTicks += 10;
                 else
-                    _currentReloadTicks += suppliedRatio * 0.5f; // nerfed recharge rate if overloaded
+                    _currentReloadTicks += 10 *  suppliedRatio * 0.5f; // nerfed recharge rate if overloaded
             }
 
             if (_currentReloadTicks >= _reloadTicks)
