@@ -216,7 +216,6 @@ namespace Whiplash.ArmorPiercingProjectiles
                     return;
                 }
 
-
                 MyLog.Default.WriteLine(">> Raycast hit");
                 _hitPosition = hitInfo.Position + -0.5 * _direction;
                 if ((_hitPosition - _origin).LengthSquared() > _minimumArmDistance * _minimumArmDistance) //only explode if beyond arm distance
