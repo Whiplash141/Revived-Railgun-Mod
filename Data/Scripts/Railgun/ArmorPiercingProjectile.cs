@@ -25,6 +25,7 @@ using Sandbox.Definitions;
 using Whiplash.Railgun;
 using VRage.Collections;
 using VRage.Voxels;
+using Whiplash.Utilities;
 
 namespace Whiplash.ArmorPiercingProjectiles
 {
@@ -117,6 +118,23 @@ namespace Whiplash.ArmorPiercingProjectiles
             return Vector3.TransformNormal(normal, mat);
         }
 
+        static double _ricochetThreshold = 30;
+        static double _ricochetCosine = Math.Cos(MathHelperD.ToRadians(_ricochetCosine));
+
+        public bool CheckForRicochet(Vector3D normal, ref Vector3D velocity)
+        {
+            var dot = Vector3D.Dot(normal, velocity);
+            if (dot < _ricochetCosine)
+            {
+                velocity = VectorMath.Reflection(-velocity, normal);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public void Update()
         {
             if (_targetHit)
@@ -148,6 +166,7 @@ namespace Whiplash.ArmorPiercingProjectiles
                 _currentTracerFadeTicks++;
             }
 
+            // Check if we hit max range
             if (_toOrigin.LengthSquared() > _maxTrajectory * _maxTrajectory)
             {
                 MyLog.Default.WriteLine(">> Max range hit");
@@ -160,6 +179,7 @@ namespace Whiplash.ArmorPiercingProjectiles
                 return;
             }
 
+            // Check if it is time to raycast
             _checkIntersectionIndex = ++_checkIntersectionIndex % 5;
             if (_checkIntersectionIndex != 0 && _positionChecked)
             {
@@ -169,11 +189,13 @@ namespace Whiplash.ArmorPiercingProjectiles
             // Add current position to trajectory list
             _trajectoryPoints.Add(_position);
 
-            var to = _position; //_position + 5.0 * _velocity * _tick;
+            // Setup line start and endpoints
+            var to = _position;
             var from = _lastPositionChecked;
             _positionChecked = true;
             _lastPositionChecked = _position;
 
+            // Cast ray
             IHitInfo hitInfo;
             bool hit = false;
             if (Vector3D.DistanceSquared(to, from) > 50 * 50)
@@ -186,8 +208,15 @@ namespace Whiplash.ArmorPiercingProjectiles
                 hit = MyAPIGateway.Physics.CastRay(from, to, out hitInfo, 0);
             }
 
+            // If target has been hit
             if (hit)
             {
+                if (CheckForRicochet(hitInfo.Normal, ref _velocity))
+                {
+                    return;
+                }
+
+
                 MyLog.Default.WriteLine(">> Raycast hit");
                 _hitPosition = hitInfo.Position + -0.5 * _direction;
                 if ((_hitPosition - _origin).LengthSquared() > _minimumArmDistance * _minimumArmDistance) //only explode if beyond arm distance
